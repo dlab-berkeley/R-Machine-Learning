@@ -126,13 +126,14 @@ This workshop draws heavily on the following resources:
 
 ## Contributors 
 
-* [Alex Stephenson](https://github.com/asteves/)
-* Pratik Sachdeva
-* Hero Ashman
+* Kelly Quinn
 
 Previous iterations of D-Lab's Machine Learning with R were created by: 
 
-- [Chris Kennedy](https://ck37.com/)
-- [Evan Muzzall](https://github.com/EastBayEv)
-- [Jae Yeon Kim](https://jaeyk.github.io/)
-- [Christopher Hench](https://github.com/henchc)
+* [Alex Stephenson](https://github.com/asteves/)
+* Pratik Sachdeva
+* Hero Ashman
+* [Chris Kennedy](https://ck37.com/)
+* [Evan Muzzall](https://github.com/EastBayEv)
+* [Jae Yeon Kim](https://jaeyk.github.io/)
+* [Christopher Hench](https://github.com/henchc)
