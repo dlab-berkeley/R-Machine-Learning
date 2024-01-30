@@ -1,111 +1,138 @@
-# D-Lab R Machine Learning Workshop
+# D-Lab R Machine Learning with tidymodels 
 
-[![DataHub](https://img.shields.io/badge/launch-datahub-blue)](DATAHUB_LINK_HERE)
-[![Binder](https://mybinder.org/badge_logo.svg)](BINDER_LINK_HERE)
+[![DataHub](https://img.shields.io/badge/launch-datahub-blue)](https://dlab.datahub.berkeley.edu/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fdlab-berkeley%2FR-Machine-Learning&urlpath=rstudio%2F&branch=main)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dlab-berkeley/R-Machine-Learning/HEAD?urlpath=rstudio)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-This repository contains the materials for D-Lab R Machine Learning workshop. We
-recommend attending [R ](D-LabWorkshop1Link),
-[D-LabWorkshop2](D-LabWorkshop2Link), and
-[AdditionalWorkshopsAsNeeded](LinksToWorkshops) prior to this workshop.
+This repository contains the materials for D-Lab's R Machine Learning with
+tidymodels. Prior experience with the concepts in [R
+Fundamentals](https://github.com/dlab-berkeley/R-Fundamentals) and [Data
+Wrangling and Manipulation in
+R](https://github.com/dlab-berkeley/R-Data-Wrangling) is assumed. 
 
-## Workshop Goals
+## Workshop Goals 
 
-In this workshop, we provide [WorkshopGoal]. First, we’ll cover [Aim1]. Then,
-we’ll explore [Aim2]. 
+In this workshop, we provide an introduction to machine learning algorithms by
+making use of the `tidymodels` package. First, we discuss what machine learning
+is, what problems it works well for, and what problems it might work less well
+for. Then, we'll explore the `tidymodels` framework to learn how to fit machine
+learning models in R. Finally, we will apply the `tidymodels` framework to
+explore multiple machine learning algorithms in R. 
 
-_Only if necessary:_ If you are not familiar with material in
-[D-LabWorkshop1](D-LabWorkshop1Link), [D-LabWorkshop2](D-LabWorkshop2Link), and
-[AdditionalWorkshopsAsNeeded](LinksToWorkshops), we recommend attending those
-workshops first.
+By the end of the workshop, learners should feel prepared to explore machine learning approaches for their data problems. 
 
-## Learning Objectives
-
-After this workshop, you will be able to:
-
-- [LearningObjective1].
-- [LearningObjective2].
-- [LearningObjective3].
-
-This workshop does not cover the following:
-
-- [NotCovered1]. These are covered in [D-LabWorkshopName](URL).
-- [NotCovered2]. These are covered in [D-LabWorkshopName](URL).
-
+Familiarity with R programming and data wrangling is assumed. If you are not familiar with the materials in [Data Wrangling and Manipulation in R](https://github.com/dlab-berkeley/R-Data-Wrangling), we recommend attending that workshop first. In addition, this workshop focuses on how to implement machine learning approaches. Learners will likely benefit from previous exposure to statistics. 
 
 ## Installation Instructions
 
-We will use [RStudio/Python] to go through the workshop materials, which requires installation of [Software]. Complete the following steps:
+We will use RStudio to go through the workshop materials, which requires the installation of both the R language and the RStudio software. Complete the following steps:
 
-1. This step(s) details software to download, with a link.
-2. Download these workshop materials:
-    * Click the green "Code" button in the top right of the repository information.
-    * Click "Download Zip".
-    * Extract this file to a folder on your computer where you can easily access it (we recommend Desktop).
-3. Optional: if you’re familiar with git, you can instead clone this repository by opening a terminal and entering [GitCloneCommand].
+1. [Download R](https://cloud.r-project.org/): Follow the links according to the operating system that you are running. Download the package, and install R onto your computer. You should install the most recent version (at least version 4.0).
 
-## Is [Language] not Working on Your Computer?
+2. [Download RStudio](https://rstudio.com/products/rstudio/download/#download): Install RStudio Desktop. This should be free. Do this after you have already installed R. The D-Lab strongly recommends an RStudio edition of 2022.02.0+443 "Prairie Trillium" or higher. 
+ 
+3. [Download these workshop materials](https://github.com/dlab-berkeley/R-Machine-Learning): 
 
-If you do not have [Language] installed and the materials loaded on your
-workshop by the time it starts, we *strongly* recommend using the UC Berkeley
-Datahub to run the materials for these lessons. You can access the DataHub by
-clicking the following button:
+* Click the green "Code" button in the top right of the repository information.
+* Click "Download Zip".
+* Extract this file to a folder on your computer where you can easily access it (we recommend Desktop).
 
-[![DataHub](https://img.shields.io/badge/launch-datahub-blue)](DATAHUB_LINK_HERE)
+4. Optional: if you're familiar with `git`, you can instead clone this repository by opening a terminal and entering `git clone git@github.com:dlab-berkeley/R-Machine-Learning.git`.
+
+5. Be sure to run the `install.R` script in the repository so that all necessary
+packages are installed.
+
+## Is R Not Working on Your Laptop?
+
+This workshop makes use of many packages within the R ecosystem. For that
+reason, we recommend using R on your local machine. 
+
+If you do not have R installed and the materials loaded on your workshop by the time it starts, we *strongly* recommend using the UC Berkeley DataHub to run the materials for these lessons. You can access the DataHub by clicking the following button:
+
+[![DataHub](https://img.shields.io/badge/launch-datahub-blue)](https://dlab.datahub.berkeley.edu/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fdlab-berkeley%2FR-Machine-Learning&urlpath=rstudio%2F&branch=main)
+
+Some users may have to click the link twice if the materials do not load initially.
 
 The DataHub downloads this repository, along with any necessary packages, and
 allows you to run the materials in an RStudio instance on UC Berkeley's servers.
-No installation is necessary from your end - you only need an internet browser
-and a CalNet ID to log in. By using the DataHub, you can save your work and come
-back to it at any time. When you want to return to your saved work, just go
-straight to the [D-Lab DataHub](https://dlab.datahub.berkeley.edu), sign in, and
-you click on the `[Workshop-Name]` folder.
+No installation is needed from your end - you only need an internet browser and
+a CalNet ID to log in. By using the DataHub, you can save your work and come
+back to it at any time. When you want to return to your saved work, go straight
+to [DataHub](https://dlab.datahub.berkeley.edu), sign in, and click on the
+`R-Machine-Learning` folder.
 
-If you don't have a Berkeley CalNet ID, you can still run these lessons in the cloud, by clicking this button:
+If you don't have a Berkeley CalNet ID, you can still run these lessons in the
+cloud, by clicking this button:
 
-[![Binder](https://mybinder.org/badge_logo.svg)](BINDER_LINK_HERE)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dlab-berkeley/R-Machine-Learning/HEAD?urlpath=rstudio)
 
-By using this button, however, you cannot save your work.
-
+If you are loading Binder with this repository for the first time, it may take a
+few minutes to set up. Binder operates similarly to the D-Lab DataHub, but on a
+different set of servers. By using Binder, however, you cannot save your work.
 
 ## Run the Code
 
-Now that you have all the required software and materials, you need to run the code:
+Now that you have all the required software and materials, you need to run the
+code:
 
-Provide instructions on running the code, including how to load relevant software (RStudio, Jupyter Notebooks, etc.) and which file to open up. See other repositories for examples.
+1. Launch the RStudio software.
 
-Additionally, provide instructions on how to run code once it’s open (running Jupyter cells, RMarkdown cells, etc.).
+2. Use the file navigator to find the `R-Machine-Learning` folder you downloaded
+   from Github.
 
-# Additional Resources
+3. Open up the file corresponding to the part of the workshop you're attending.
 
-Check out the following resources to learn more about [Workshop topics]:
+4. If necessary, run `install.R` to make sure the requisite packages are
+installed. This should not be necessary on Binder.
 
-* [Resource1](LinkToResource1): _Explain Resource 1_
-* [Resource2](LinkToResource2): _Explain Resource 2_
-* [...]
+4. Place your cursor on a given line and press "Command + Enter" (Mac) or
+   "Control + Enter" (PC) to run an individual line of code. 
 
+5. The `solutions` folder contains the solutions to the challenge problems.
 
-# About the UC Berkeley D-Lab
+## Additional Resources 
 
-D-Lab works with Berkeley faculty, research staff, and students to advance data-intensive social science and humanities research. Our goal at D-Lab is to provide practical training, staff support, resources, and space to enable you to use R for your own research applications. Our services cater to all skill levels and no programming, statistical, or computer science backgrounds are necessary. We offer these services in the form of workshops, one-to-one consulting, and working groups that cover a variety of research topics, digital tools, and programming languages.  
+This workshop draws heavily on the following resources: 
 
-Visit the [D-Lab homepage](https://dlab.berkeley.edu/) to learn more about us. You can view our [calendar](https://dlab.berkeley.edu/events/calendar) for upcoming events, learn about how to utilize our [consulting](https://dlab.berkeley.edu/consulting) and [data](https://dlab.berkeley.edu/data) services, and check out upcoming [workshops](https://dlab.berkeley.edu/events/workshops).
+* [*Tidy Modeling with R* by Max Kuhn and Julia Silge](https://www.tmwr.org/).
 
-# Other D-Lab [Language] Workshops
+* [*An Introduction to Statistical Learning* by James, Witten, Hastie, and Tibshirani](https://www.statlearning.com/)
 
-Here are other [Language] workshops offered by the D-Lab:
+* ["Machine Learning Methods Economists Should Know About" by Athey and Imbens](https://arxiv.org/abs/1903.10075)
 
-## Basic Competency
-* [R Fundamentals](https://github.com/dlab-berkeley/R-Fundamentals)
-* [R Data Wrangling](https://github.com/dlab-berkeley/R-Data-Wrangling)
+* [*Feature Engineering and Selection: A Practical Approach for Predictive Models* by Kuhn and Johnson (2019)](http://www.feat.engineering/data-splitting.html)
 
-## Intermediate/Advanced Competency
+* [*The Elements of Statistical Learning* by Hastie, Friedman, and Tibshirani](https://link.springer.com/book/10.1007/978-0-387-21606-5)
 
-* [Deep Learning with R](https://github.com/dlab-berkeley/R-Deep-Learning)
+* [*Deep Learning* by Goodfellow, Bengio, and Courville](https://www.deeplearningbook.org/)
 
-# Contributors
+## Other D-Lab R Workshops
 
-* Kelly Quinn 
-* Tom van Nuenen
-* Hero Ashman
+### Basic Competency 
+
+- [R Data Wrangling](https://github.com/dlab-berkeley/R-Data-Wrangling)
+- [R Graphics with ggplot2](https://github.com/dlab-berkeley/R-graphics)
+- [R Functional Programming](https://github.com/dlab-berkeley/R-functional-programming)
+- [Project Management in R](https://github.com/dlab-berkeley/efficient-reproducible-project-management-in-R)
+- [Geospatial Fundamentals in R with sf](https://github.com/dlab-berkeley/Geospatial-Fundamentals-in-R-with-sf)
+- [Census Data in R](https://github.com/dlab-berkeley/Census-Data-in-R)
+
+### Intermediate/Advanced Competency
+
+- [Unsupervised Learning in R](https://github.com/dlab-berkeley/Unsupervised-Learning-in-R)
+- [Introduction to Deep Learning in R](https://github.com/dlab-berkeley/Deep-Learning-in-R)
+- [Fairness and Bias in Machine Learning](https://github.com/dlab-berkeley/fairML)
+- [R Package Development](https://github.com/dlab-berkeley/R-package-development)
+
+## Contributors 
+
+* [Alex Stephenson](https://github.com/asteves/)
 * Pratik Sachdeva
+* Hero Ashman
+
+Previous iterations of D-Lab's Machine Learning with R were created by: 
+
+- [Chris Kennedy](https://ck37.com/)
+- [Evan Muzzall](https://github.com/EastBayEv)
+- [Jae Yeon Kim](https://jaeyk.github.io/)
+- [Christopher Hench](https://github.com/henchc)
