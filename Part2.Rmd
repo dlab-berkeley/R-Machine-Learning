@@ -1,0 +1,434 @@
+---
+title: "R Machine Learning Pilot (Day 2)"
+output: html_notebook
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+# Recap of Part 1
+
+In Part 1 of this workshop, we attempted to predict the value of a single, continuous outcome variable `hourly_wage` based on a range of input features, including age, location, and industry. Specifically, we covered: 
+
+* Train-test splits: partitioning the data set into a training set used to train our model, and a test set used to evaluate the model's performance. 
+
+* The bias-variance tradeoff: the balance between the model's ability to capture the true underlying patterns of the training data (bias) and its flexibility to learn from specific instances within that data (variance). This tradeoff matters because it directly affects the generalization ability of the model to new, unseen data.  
+
+* Pre-processing: cleaning and transforming raw data into a suitable format for analysis, ensuring the data is free of errors, inconsistencies, and irrelevant information. It often includes coding categorical variables and normalizing numerical values to reduce bias and improve model accuracy.
+
+Today, we will apply and expound upon these principles to develop models to predict categorical variables. This process is called 'classification.'  
+
+
+# Install Packages and Load Data
+
+Before we dive into today's material, let's load our libraries `tidymodels` and `tidyverse` libraries.
+
+```{r install, include=FALSE}
+# install.packages(c("tidyverse","tidymodels"))
+library(tidymodels)
+library(tidyverse)
+
+# Prefer tidymodels functions in any case of name conflict
+tidymodels::tidymodels_prefer() 
+
+# set seed for reproducibility 
+set.seed(123)
+```
+
+# Other Tasks in Supervised Machine Learning: Classification
+
+Thus far, we've spent most of our time working through regression problems (i.e., predicting a continuous outcome variable). Let's switch to a new task: classification. In classification, we aim to predict one of a group of values. For example, predicting a qualitative response is considered classification because we assign the observation to a category (or class).
+
+Like regression, classification is also a supervised learning technique because we have a set of labeled training data that we can use to build a classifier. Now, however, we have access to different techniques because the structure of our outcome variable is categorical.
+
+📝 **Poll 1**: Identify which of the following are classification problems in machine learning. 
+
+1.  An advertiser is interested in the relationship between age and the number of hours of YouTube consumed.
+
+2.  A medical testing company conducts a procedure to determine whether a person has a cancer diagnosis.
+
+3.  A researcher is interested in the effect of an education intervention on students' test scores.
+
+4. A software engineer is designing an algorithm to detect whether an email is spam or not. 
+5. A political scientist wants to classify Twitter posts as positive or negative. 
+
+**Solution 1: (2), (4), and (5).**
+
+# Today's Data: Likely Voters 
+
+Now, let's load our primary data set for today's workshop: `vote`. Our goal is going to be predicting whether someone voted in the 2020 election, perhaps to identify likely voters in an upcoming election. 
+
+```{r}
+vote2020 <- read.csv("../data/vote2020.csv",row.names = NULL)
+
+# visually inspect the data frame 
+summary(vote2020)
+```
+
+## Exploratory Analysis 
+
+Recall that the first step in machine learning (and most analyses) is to explore the data we're working with to get a sense of its shape and anticipate problems that may arise. 
+
+🥊 **Challenge 1**: Perform exploratory analyses on the `vote2020` data set, keeping in mind that today's goal is to predict `voted`. What do you notice about the data? 
+
+```{r}
+# Load necessary libraries
+vote2020 %>%
+  group_by(state) %>%
+  summarise(voted_percentage = mean(voted, na.rm = TRUE) * 100) %>%
+  ungroup() %>%
+  ggplot(aes(x = reorder(state,-voted_percentage), y = voted_percentage)) +
+    geom_bar(stat = "identity", fill = "blue") +
+    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1)) +  # Adjusting x-axis text +
+  coord_flip() + 
+  scale_y_continuous(limits=c(0,100)) + 
+    labs(title = "Percentage of People Who Voted in Each State",
+         x = "State",
+         y = "Percentage Voted") +
+    theme_minimal()
+```
+
+## Train-Test Split 
+
+Now that we have a better sense of the data, let's go ahead and split `vote2020` into training and test sets:
+
+```{r}
+# Perform splits
+vote2020$voted <- as.factor(vote2020$voted)
+vote_split <- initial_split(vote2020, prop = 0.75)
+vote_train <- training(vote_split)
+vote_test <- testing(vote_split)
+```
+
+🔔 **Question 1**: How does having a training and test set help us manage the bias-variance tradeoff in machine learning? 
+
+## Pre-Processing 
+
+In our example from Part 1, we prepared our data for analysis by recoding categorical variables and normalizing numeric ones using `step_dummy(all_nominal_predictors())` and `step_normalize`, respectively. 
+
+In that example, we also dropped rows that had any missing values across variables. Let's try another example, in which we don't *omit* samples that have missing values, but instead perform *imputation*, in which we replace those missing values according to certain criteria. There are various kinds of imputation, including: 
+
+-   For example, whenever we have a missing value for the `occupation`, we
+    can replace that missing value with the most common occupation This is
+    called *mode imputation*.
+
+-   Or, we could replace a missing numerical predictor (e.g., age) using the median across all the samples. This is called *median imputation*.
+
+There are other ways to impute, but these are good starting points. The
+way to perform imputation in a `recipe` is via the `step_impute_*`
+functions. 
+
+🥊 **Challenge 2**: Using the same logic from Part 1, create your own recipe called `voterecipe` that lays out the steps for pre-processing the data. Instead of dropping rows with missing values, use  `step_impute_median` to impute numeric variables and `step_impute_mode` to impute categorical variables. 
+
+```{r}
+voterecipe <- 
+  recipe(voted ~ ., data = voted_train) %>%
+  step_impute_median(all_numeric_predictors()) %>%
+  step_impute_mode(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>% 
+  step_normalize(all_of(c("age")))
+```
+
+This pre-processing will allow us to take advantage of samples with
+missing data, even if it comes at a little cost to accuracy. Imputation
+is often a necessary step, since it's common to have missing data.
+
+
+## Step 3: Training a Model 
+
+#### Technique 1: Logistic Regression
+
+Machine learning practitioners often recommend logistic regression as a starting model when predicting a binary outcome or probability. For example, if we are estimating the relationship between mortality and income we can estimate the probability of mortality given a change in income.
+
+We write this as $P[M|I]$ and the values will range between 0 and 1. We can make a prediction for any given value of income on the mortality outcome. Normally, we establish a threshold for prediction. For example, we might predict death where $P[M|i] > 0.5$.
+
+Logistic regression is a generalized linear model where we model the probability function using the logistic function. Define the general function as $p(Y= 1|X)$. Then the model of interest is:
+
+$$p(Y = 1|\textbf{X}) = \frac{e^{\textbf{X}\beta}}{1 + e^{\textbf{X}\beta}}$$
+Here the bold X indicates a vector of features and the $\beta$ coefficient represents a vector of coefficients. 
+
+
+In `tidymodels`, creating a logistic regression follows the exact same procedure as a linear regression. This time, however, we will use `logistic_reg()` to initiate the function. Let's create the model:
+
+```{r}
+# Create model
+logistic_model <- logistic_reg(mode = "classification")
+```
+
+Now, we create our workflow, and fit the model:
+
+```{r}
+# Create workflow 
+class_wflow <- workflow() %>%
+  add_recipe(voterecipe) %>%
+  add_model(logistic_model)
+
+# Fit the workflow
+class_fit <- class_wflow %>% 
+  fit(data = class_train)
+```
+
+Finally, let's use augment to obtain the predictions, and take a look at them:
+
+```{r}
+predictions <- augment(class_fit, new_data = class_test)
+predictions
+```
+
+🔔 **Question 2**: Notice how there are two columns for the predictions. What do these values mean? What are they telling us?
+
+To evaluate the model, we'll use the `accuracy` function again:
+
+```{r}
+accuracy(predictions, truth = voted, estimate = .pred_class, type="class")
+```
+We predicted the likelihood someone voted 81% of the time - pretty good! 
+```{r}
+conf_matrix <- predictions %>%
+  conf_mat(truth = voted, estimate = .pred_class)
+print(conf_matrix)
+```
+
+## Choosing Hyperparameters: Validation Sets
+
+It's nice that we can do different types of regularization, but how do
+we know what value of the mixture coefficient to pick? In machine
+learning, this value - which we choose before fitting the model - is
+known as a hyperparameter. Since hyperparameters are chosen *before* we
+fit the model, we can't just choose them based off the training data.
+So, how should we go about conducting **hyperparameter tuning**:
+identifying the best hyperparameter(s) to use?
+
+Let's think back to our original goal. We want a model that generalizes
+to unseen data. So, ideally, the choice of the hyperparameter should be
+such that the performance on unseen data is the best. We can't use the
+test set for this, but what if we had another set of held-out data?
+
+This is the basis for a **validation set**. If we had extra held-out
+dataset, we could try a bunch of hyperparameters on the training set,
+and see which one results in a model that performs the best on the
+validation set. We then would choose that hyperparameter, and use it to
+refit the model on both the training data and validation data. We could
+then, finally, evaluate on the test set.
+
+
+So, you'll often see a dataset not only split up into training/test
+sets, but training/validation/test sets, particularly when you need to
+choose a hyperparameter.
+
+### Cross-Validation
+
+We just formulated the process of choosing a hyperparameter with a
+single validation set. However, there are many ways to perform
+validation. The most common way is **cross-validation**.
+Cross-validation is motivated by the concern that we may not choose the
+best hyperparameter if we're only validating on a small fraction of the
+data. If the validation sample, just by chance, contains specific data
+samples, we may bias our model in favor of those samples, and limit its
+generalizability.
+
+So, during cross-validation, we effectively validate on the *entire*
+training set, by breaking it up into folds. Here's the process:
+
+1.  Perform a train/test split, as you normally would.
+2.  Choose a number of folds - the most common is $K=5$ - and split up
+    your training data into those equally sized "folds".
+3.  For each hyperparameter you want to tune, specify the possible
+    values it could take. Then, for each hyperparameter:
+    1.  For *each* *value* of that hyperparameter, we're going to fit
+        $K$ models. Let's assume $K=5$. The first model will be fit on
+        Folds 2-5, and validated on Fold 1. The second model will be fit
+        on Folds 1, 3-5, and validated on Fold 2. This process continues
+        for all 5 splits.
+
+    2.  The performance of each value of that hyperparameter is
+        summarized by the average predictive performance on all 5
+        held-out folds. We then choose the hyperparameter value that had
+        the best average performance.
+4.  We can then refit a new model to the entire training set, using our
+    chosen hyperparameter(s). That's our final model - evaluate it on
+    the test set!
+
+![cross-validation](https://scikit-learn.org/stable/_images/grid_search_cross_validation.png)
+
+
+
+### Cross-Validation
+
+We just formulated the process of choosing a hyperparameter with a
+single validation set. However, there are many ways to perform
+validation. The most common way is **cross-validation**.
+Cross-validation is motivated by the concern that we may not choose the
+best hyperparameter if we're only validating on a small fraction of the
+data. If the validation sample, just by chance, contains specific data
+samples, we may bias our model in favor of those samples, and limit its
+generalizability.
+
+So, during cross-validation, we effectively validate on the *entire*
+training set, by breaking it up into folds. Here's the process:
+
+1.  Perform a train/test split, as you normally would.
+2.  Choose a number of folds - the most common is $K=5$ - and split up
+    your training data into those equally sized "folds".
+3.  For each hyperparameter you want to tune, specify the possible
+    values it could take. Then, for each hyperparameter:
+    1.  For *each* *value* of that hyperparameter, we're going to fit
+        $K$ models. Let's assume $K=5$. The first model will be fit on
+        Folds 2-5, and validated on Fold 1. The second model will be fit
+        on Folds 1, 3-5, and validated on Fold 2. This process continues
+        for all 5 splits.
+
+    2.  The performance of each value of that hyperparameter is
+        summarized by the average predictive performance on all 5
+        held-out folds. We then choose the hyperparameter value that had
+        the best average performance.
+4.  We can then refit a new model to the entire training set, using our
+    chosen hyperparameter(s). That's our final model - evaluate it on
+    the test set!
+
+![cross-validation](https://scikit-learn.org/stable/_images/grid_search_cross_validation.png)
+
+## Hyperparameter Tuning and Cross Validation in Practice
+
+So, we need to do two things:
+
+1.  Decide to perform hyperparameter tuning on the penalty value, and
+2.  Do so using cross-validation.
+
+The `tidymodels` suite has two packages to help us with these steps:
+`tune` and `rsample`.
+
+
+
+Most of the defaults are "No". So, if we had naively just said nobody
+defaulted, we would have obtained an accuracy of 97%! We did better than
+this - 97.76% - but this shows us the importance of properly
+benchmarking our data.
+
+💡 **Tip**: While we used logistic regression to predict a binary
+outcome `voted`, recall that this prediction is based on a range of
+likelihoods from 0 to 1. These predictions can be useful to supplement
+causal inferences methods like propensity score matching that require
+precise likelihood estimates without having to explain why.
+
+
+
+
+
+
+APPENDIX: ADVANCED TOPICS
+
+# Random Forests
+
+The last algorithm we'll look at is the random forest, which is an
+**ensemble** of decision trees. Ensembling is a common machine learning
+approach in which we combine many smaller models into one final
+predictions.
+
+A decision tree is a method of stratifying the feature space into a
+number of simple regions. Usually, trees use the mean or mode dependent
+variable value for the training data in the region to which it belongs
+(James *et al.* 2021). Trees can be applied to both regression or
+classification problems. To build a single tree, we:
+
+1.  Divide the feature space into distinct regions.
+2.  For every observation that falls into a distinct region ($R_j$) we
+    make the same prediction.
+
+Trees by themselves turn out to not be very good at prediction compared
+to other supervised learning model. However, combine them into a *random
+forest* and they become very useful, especially if the relationship is
+nonlinear and complex. A random forest (Breiman 2001) is an example of
+an ensemble method, which is an approach that combines many simple
+models in order to get a single powerful prediction model.
+
+In a random forest, we build a number of decision trees on bootstrapped
+training samples. Each tree is grown independently on random samples of
+the observations, a process known as *bagging.*
+
+When building the trees, each time a split occurs, we take a random
+sample of features to be split candidates instead of the full set of
+features. By choosing a random subset each time, a random forest
+decorrelates the individual decision trees. This makes the resulting
+average less variable.
+
+Let's try fitting a random forest using the `rand_forest` model:
+
+```{r}
+# Create model specification 
+rf_model <- rand_forest(
+  mtry = tune(),
+  min_n = tune(),
+  trees = 50) %>%
+  set_mode("classification") %>%
+  set_engine("ranger") 
+# Create recipe
+rf_recipe <- recipe(union ~ ., data = class_train) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_normalize(all_predictors())
+# Create workflow
+rf_wflow <- workflow() %>%
+  add_recipe(rf_recipe) %>%
+  add_model(rf_model)
+```
+
+Random forests are known for having many hyperparameters than need
+tuning. In this case, we need to tune two: `mtry` and `min_n`. Let's
+create the `rsample` object for using 3 folds. Then, we'll tune the
+grid. This time, we'll just specify `grid = 10` to indicate we want 10
+hyperparameter configurations. The `dials` package, in this case, will
+automatically choose those values for us.
+
+```{r}
+# Use cross-validation to tune our model appropriately 
+trees_folds <- vfold_cv(class_train, v = 3)
+
+# Find appropriate tuning parameters
+set.seed(345)
+rf_fit <- tune_grid(
+  object = rf_wflow, 
+  resamples = trees_folds, 
+  grid = 10)
+```
+
+We're going to use a new metric this time called the ROC-AUC. This is
+the Area Under the Curve for the Receiver-Operator Characteristic. The
+main takeaway for this metric is that it tells us how good our
+probability predictions are, rather than just the predictions. In
+classification settings, it's often preferable to the accuracy. It
+varies from 0 to 1, where larger is better:
+
+```{r}
+# View the ROC metric across models 
+rf_fit %>% 
+  collect_metrics() %>%
+  filter(.metric == "roc_auc") %>%
+  select(mean, min_n, mtry)
+```
+
+Now, let's finalize the workflow:
+
+```{r}
+# Select the best RF model 
+best_rf_auc <- select_best(rf_fit, "roc_auc")
+
+final_rf_wflow <- rf_wflow %>%
+  finalize_workflow(parameters = best_rf_auc) %>%
+  fit(data = class_train)
+```
+
+And evaluate the ROC AUC:
+
+```{r}
+final_rf_wflow %>%
+  augment(new_data = class_test) %>%
+  roc_auc(truth = default, estimate = .pred_No)
+```
+
+That's rather good ROC performance!
+
+# Overview
+
+Congratulations, you've made it! We covered the basics of supervised machine learning in `tidymodels` in this workshop. However, there's much more to explore. The best way to keep pushing forward is to choose a problem to study, and refer to the documentation when you need help. The
+website Kaggle has an abundance of good data science problems to work on if you need help choosing a task!
+
