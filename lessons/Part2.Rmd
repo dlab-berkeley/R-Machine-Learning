@@ -10,28 +10,28 @@ editor_options:
 
 In Part 1 of this workshop, we attempted to predict the value of a
 single, continuous outcome variable `hourly_wage` based on a range of
-input features, including age, location, and industry. Today, we will
-apply those principles to categorical variables in what's known as
+input features, including age, location, and industry. Specifically, we
+covered:
+
+-   Train-test splits: partitioning the data set into a training set
+    used to train our model, and a test set used to evaluate the model's
+    performance.
+
+-   The bias-variance tradeoff: the balance between the model's ability
+    to capture the true underlying patterns of the training data (bias)
+    and its flexibility to learn from specific instances within that
+    data (variance). This tradeoff matters because it directly affects
+    the generalization ability of the model to new, unseen data.
+
+-   Pre-processing: cleaning and transforming raw data into a suitable
+    format for analysis, ensuring the data is free of errors,
+    inconsistencies, and irrelevant information. It often includes
+    coding categorical variables and normalizing numerical values to
+    reduce bias and improve model accuracy.
+
+Today, we will apply and expound upon these principles to develop models
+to predict categorical variables. This process is called
 'classification.'
-
-# Some Workshop Notation
-
-As a reminder, we'll use the same notation from Part 1:
-
-🔔 **Question**: A quick question to help you understand what's going
-on.
-
-🥊 **Challenge**: Interactive exercise. We'll go through these in the
-workshop!
-
-⚠️ **Warning**: Heads-up about tricky stuff or common mistakes.
-
-💡 **Tip**: How to do something a bit more efficiently or effectively.
-
-📝 **Poll**: A zoom poll to help you learn.
-
-🎬 **Demo**: Showing off something more advanced so you know what you
-can use R for in the future.
 
 # Install Packages and Load Data
 
@@ -53,83 +53,217 @@ set.seed(123)
 # Other Tasks in Supervised Machine Learning: Classification
 
 Thus far, we've spent most of our time working through regression
-problems. Let's switch to a new task: classification. In classification,
-we aim to predict one of a group of values. For example, predicting a
-qualitative response is considered classification because we assign the
-observation to a category (or class).
+problems (i.e., predicting a continuous outcome variable). Let's switch
+to a new task: classification. In classification, we aim to predict one
+of a group of values. For example, predicting a qualitative response is
+considered classification because we assign the observation to a
+category (or class).
 
 Like regression, classification is also a supervised learning technique
 because we have a set of labeled training data that we can use to build
 a classifier. Now, however, we have access to different techniques
 because the structure of our outcome variable is categorical.
 
-📝 **Poll 1**: Identify which of the following are classification problems in machine learning. 
+📝 **Poll 1**: Identify which of the following are classification
+problems in machine learning.
 
-1.  An advertiser is interested in the relationship between age and the number of hours of YouTube consumed.
+1.  An advertiser is interested in the relationship between age and the
+    number of hours of YouTube consumed.
 
-2.  A medical testing company conducts a procedure to determine whether a person has a cancer diagnosis.
+2.  A medical testing company conducts a procedure to determine whether
+    a person has a cancer diagnosis.
 
-3.  A researcher is interested in the effect of an education intervention on students' test scores.
+3.  A researcher is interested in the effect of an education
+    intervention on students' test scores.
 
-4. A software engineer is designing an algorithm to detect whether an email is spam or not. 
+4.  A software engineer is designing an algorithm to detect whether an
+    email is spam or not.
 
-5. A political scientist wants to classify Twitter posts as positive or negative. 
+5.  A political scientist wants to classify Twitter posts as positive or
+    negative.
 
 **Solution 1: (2), (4), and (5).**
 
-# Example 1: Logistic Regression
+# Today's Data: Voting Patterns in the 2020 Election
 
-Now, let's load our primary data set for today's workshop: `vote`. 
+Now, let's load our primary data set for today's workshop: `vote2020`.
+Our goal is going to be predicting whether someone voted in the 2020
+election, perhaps to tailor engagement strategies toward those least
+likely to vote in an upcoming election.
 
 ```{r}
-vote <- read.csv("../data/vote.csv",row.names = NULL)
+vote2020 <- read.csv("../data/vote2020.csv",row.names = NULL)
 
 # visually inspect the data frame 
-view(vote)
+summary(vote2020)
 ```
 
+## Exploratory Analysis
 
-Machine learning practitioners often recommend logistic regression as a starting model when predicting a binary outcome or probability. For example, if we are estimating the relationship between mortality and income we can estimate the probability of mortality given a change in income.
+Recall that the first step in machine learning (and most analyses) is to
+explore the data we're working with to get a sense of its shape and
+anticipate problems that may arise.
 
-We write this as $P[M|I]$ and the values will range between 0 and 1. We can make a prediction for any given value of income on the mortality outcome. Normally, we establish a threshold for prediction. For example, we might predict death where $P[M|i] > 0.5$.
+🥊 **Challenge 1**: Perform exploratory analyses on the `vote2020` data
+set, keeping in mind that today's goal is to predict `voted`. What do
+you notice about the data?
 
-**Question 1 : how do you determine from a probability ie logistic
-regression to guess 1 or 0, ends up being coin flip**
+```{r}
+# Load necessary libraries
+vote2020 %>%
+  group_by(state) %>%
+  summarise(voted_percentage = mean(voted, na.rm = TRUE) * 100) %>%
+  ungroup() %>%
+  ggplot(aes(x = reorder(state,-voted_percentage), y = voted_percentage)) +
+    geom_bar(stat = "identity", fill = "blue") +
+    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1)) +  # Adjusting x-axis text +
+  coord_flip() + 
+  scale_y_continuous(limits=c(0,100)) + 
+    labs(title = "Percentage of People Who Voted in Each State",
+         x = "State",
+         y = "Percentage Voted") +
+    theme_minimal()
+```
 
-Logistic regression is a generalized linear model where we model the probability function using the logistic function. Define the general function as $p(Y= 1|X)$. Then the model of interest is:
+## Train-Test Split
+
+Recall from Part 1 that a critical first step in machine learning is
+partitioning our data into training and test sets.
+
+🔔 **Question 1**: Using the entire `vote2020` data set for model
+training resulted in impressively high accuracy during evaluation.
+However, upon deploying this model to predict voter turnout for an
+upcoming election, the predictions significantly diverged from actual
+turnout, with many discrepancies in who was predicted to vote versus who
+actually voted. The model's near-perfect performance in development
+starkly contrasted its poor real-world prediction outcomes, indicating a
+potential oversight in the model training and evaluation process.
+
+**Answer 1**: The key issue is that the model was never tested on unseen
+data. By using the entire data set for training, the model essentially
+"memorized" the data, including any noise or patterns specific to that
+set of individuals. This led to overfitting, where the model excelled at
+predicting the training data but failed to generalize to new, unseen
+data. Since the model's performance was only evaluated on data it had
+already seen, its apparent accuracy was misleading, giving a false sense
+of confidence in its predictive capabilities.
+
+Now that we have a better sense of the data, let's go ahead and split
+`vote2020` into training and test sets:
+
+```{r}
+# Perform splits
+vote2020$voted <- as.factor(vote2020$voted)
+vote_split <- initial_split(vote2020, prop = 0.75)
+vote_train <- training(vote_split)
+vote_test <- testing(vote_split)
+```
+
+## Pre-Processing
+
+In our example from Part 1, we prepared our data for analysis by
+recoding categorical variables and normalizing numeric ones using
+`step_dummy(all_nominal_predictors())` and `step_normalize`,
+respectively.
+
+In that example, we also dropped rows that had any missing values across
+variables. Let's try another example, in which we don't *omit* samples
+that have missing values, but instead perform *imputation*, in which we
+replace those missing values according to certain criteria. There are
+various kinds of imputation, including:
+
+-   For example, whenever we have a missing value for the `occupation`,
+    we can replace that missing value with the most common occupation.
+    This is called *mode imputation*.
+
+-   Or, we could replace a missing numerical predictor (e.g., age) using
+    the median across all the samples. This is called *median
+    imputation*.
+
+There are other ways to impute, but these are good starting points. The
+way to perform imputation in a `recipe` is via the `step_impute_*`
+functions.
+
+🥊 **Challenge 2**: Using the same logic from Part 1, create your own
+recipe called `voterecipe` that lays out the steps for pre-processing
+the data. Instead of dropping rows with missing values, use
+`step_impute_median` to impute numeric variables and `step_impute_mode`
+to impute categorical variables.
+
+```{r}
+voterecipe <- 
+  recipe(voted ~ ., data = vote_train) %>%
+  step_impute_median(all_numeric_predictors()) %>%
+  step_impute_mode(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>% 
+  step_normalize(all_of(c("age")))
+```
+
+This pre-processing will allow us to take advantage of samples with
+missing data, even if it comes at a little cost to accuracy. Imputation
+is often a necessary step, since it's common to have missing data.
+
+## Developing and Evaluating Models
+
+Now that we've performed exploratory analyses, pre-processing, and a
+train-test split, let's go ahead and train our model. We will create a
+classifier (i.e., a model that predicts membership in a group) with two
+methods: logistic regression and decision trees.
+
+#### Algorithm 1: Logistic Regression
+
+Machine learning practitioners often recommend logistic regression as a
+starting model when predicting a binary outcome or probability. For
+example, if we are estimating the relationship between mortality and
+income we can estimate the probability of mortality given a change in
+income.
+
+We write this as $P[M|I]$ and the values will range between 0 and 1. We
+can make a prediction for any given value of income on the mortality
+outcome. Normally, we establish a threshold for prediction. For example,
+we might predict death where $P[M|i] > 0.5$.
+
+Logistic regression is a generalized linear model where we model the
+probability function using the logistic function. Define the general
+function as $p(Y= 1|X)$. Then the model of interest is:
 
 $$p(Y = 1|\textbf{X}) = \frac{e^{\textbf{X}\beta}}{1 + e^{\textbf{X}\beta}}$$
 Here the bold X indicates a vector of features and the $\beta$
 coefficient represents a vector of coefficients.
 
-Here's how to fit classification problems in `tidymodels` using logistic regression.
+Here's how to fit classification problems in `tidymodels` using logistic
+regression.
 
 Let's go ahead and perform the training and test splits for the `vote`
 data set:
 
 ```{r}
 # Perform splits
-vote$voted <- as.factor(vote$voted)
-class_split <- initial_split(vote, prop = 0.75)
+vote2020$voted <- as.factor(vote2020$voted)
+class_split <- initial_split(vote2020, prop = 0.75)
 class_train <- training(class_split)
 class_test <- testing(class_split)
 ```
 
-In `tidymodels`, creating a logistic regression follows the exact same procedure as a linear regression. This time, however, we will use `logistic_reg()` to initiate the function. Let's create the model:
+In `tidymodels`, creating a logistic regression follows the exact same
+procedure as a linear regression. This time, however, we will use
+`logistic_reg()` to initiate the function. Let's create the model:
 
 ```{r}
 # Create model
 logistic_model <- logistic_reg(mode = "classification")
 ```
 
-Next, let's create a `recipe` for preprocessing:
+Next, let's create a `recipe` for pre-processing:
 
 ```{r}
 # Recipe for classifying defaults
 class_recipe <- recipe(voted ~ ., data = class_train) %>%
   step_impute_median(all_numeric_predictors()) %>%
   step_impute_mode(all_nominal_predictors()) %>%
-  step_dummy(all_nominal_predictors()) 
+  step_dummy(all_nominal_predictors()) %>%
+  step_normalize(all_of(c("age")))
+  
 ```
 
 Now, we create our workflow, and fit the model:
@@ -145,16 +279,23 @@ class_fit <- class_wflow %>%
   fit(data = class_train)
 ```
 
-Finally, let's use augment to obtain the predictions, and take a look at
-them:
+Finally, let's use augment from the `yardstick` package to obtain the
+predictions, and take a look at them:
 
 ```{r}
 predictions <- augment(class_fit, new_data = class_test)
 predictions
 ```
 
-Notice how there are two columns for the predictions. What do these
-values mean? What are they telling us?
+🔔 **Question 2**: Notice that new three columns have appeared in our
+data set. What do these values mean? What are they telling us?
+
+**Answer 2**: `.pred_class` corresponds to the value our algorithm is
+predicting, i.e., whether the person voted in the election or not. This
+was determined using the two variables `.pred_0` and `.pred_1`, which
+represent the predictions from the logistic regression. If membership in
+group 1 (i.e., voted = 1) is greater than .5, then `.pred_class` will
+take a value of 1.
 
 To evaluate the model, we'll use the `accuracy` function again:
 
@@ -162,18 +303,73 @@ To evaluate the model, we'll use the `accuracy` function again:
 accuracy(predictions, truth = voted, estimate = .pred_class, type="class")
 ```
 
+We predicted the likelihood that someone voted in the last election with
+an accuracy of 81% - not bad! We can also create what's called a
+'confusion matrix' to see how well our model did at predicting each
+class.
 
-
-Most of the defaults are "No". So, if we had naively just said nobody
-defaulted, we would have obtained an accuracy of 97%! We did better than
-this - 97.76% - but this shows us the importance of properly
-benchmarking our data.
+```{r}
+predictions %>%
+  conf_mat(truth = voted, estimate = .pred_class)
+```
 
 💡 **Tip**: While we used logistic regression to predict a binary
 outcome `voted`, recall that this prediction is based on a range of
 likelihoods from 0 to 1. These predictions can be useful to supplement
 causal inferences methods like propensity score matching that require
 precise likelihood estimates without having to explain why.
+
+But, there are many other options in our machine learning tool kit to get a better prediction. 
+
+#### Hyperparameter Tuning and Regularization 
+
+Notice that until now, we have used the default settings for the linear
+and logistic regressions we have run. Looking at the documentation for logistic regression, `?logistic_reg()`, we see that there are many arguments that we left blank when we initialized our model above. These arguments, also known
+as 'parameters', correspond to statistical choices about how the model
+should operate or be structured. 
+
+Some of these hyperparameters include 'engine', 'penalty', and 'mixture': 
+
+* Engine: Different engines can implement regression through various algorithms or computational approaches. When you specify an engine for logistic regression in R, you're choosing the particular set of algorithms and optimizations that will be used to train your model.
+
+- Penalty: "penalty" refers to a regularization technique used to prevent overfitting by discouraging overly complex models. It does this by adding a penalty to the loss function for large coefficients. Common penalties are L1 (Lasso), which can shrink some coefficients to zero (thus performing feature selection), and L2 (Ridge), which shrinks all coefficients toward zero but typically doesn't set any to exactly zero. The penalty helps in creating simpler, more generalizable models that perform better on unseen data by prioritizing the most influential features and reducing the model's sensitivity to the training data's noise.
+
+For example, we can add a 'penalty' on the size of the coefficients of a
+model and reduce the likelihood of overfitting. Lasso, ridge, and
+elastic net are different types of penalties that greatly reduce or
+shrink to zero coefficients on variables that are picking up on a lot of
+noise. The broad technique of reducing overfitting is called
+'regularization.'
+
+🥊 **Challenge 3**: We have reproduced the original code from above that trained a basic classifier on our voting data set without changing any of the hyperparameters, as well as the code that obtains predictions. Re-run this code several times, but each time change the hyperparameters in the model specification. For mixture, select values between 0 and 1 inclusive; for penalty, include a non-negative number; and for engine, select either "glmnet" or "glm". How does the accuracy change? 
+
+```{r}
+chal3_logistic_model <- logistic_reg(mode = "classification", 
+                                     mixture=0, # ranges between 0 and 1
+                                     penalty = 0, # greater >= 0 
+                                     engine="glmnet") 
+
+# Create workflow 
+chal3_wflow <- workflow() %>%
+  add_recipe(class_recipe) %>%
+  add_model(chal3_logistic_model)
+
+# Fit the workflow
+chal3_fit <- chal3_wflow %>% 
+  fit(data = class_train)
+
+# obtain predictions 
+chal3_predictions <- augment(chal3_fit, new_data = class_test)
+accuracy(chal3_predictions, truth = voted, estimate = .pred_class, type="class")
+```
+
+Cue hyperparameter tuning! Hyperparameter tuning is crucial in machine
+learning as it directly impacts the performance and effectiveness of
+models. By fine-tuning hyperparameters, practitioners can optimize
+models to achieve higher accuracy, better generalize to unseen data, and
+prevent issues like overfitting or underfitting. This process allows for
+the customization of models to specific datasets and objectives,
+enabling the discovery of the best configuration for a given problem.
 
 
 

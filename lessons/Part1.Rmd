@@ -42,9 +42,6 @@ library(tidyverse)
 
 # Prefer tidymodels functions in any case of name conflict
 tidymodels::tidymodels_prefer() 
-
-# set seed for reproducibility 
-set.seed(123)
 ```
 
 # What is Machine Learning?
@@ -97,7 +94,7 @@ First, we'll load the data:
 jobs <- read.csv("../data/jobs.csv",row.names = NULL)
 
 # visually inspect the data frame 
-view(jobs)
+summary(jobs)
 ```
 
 ## 🥊 Challenge 1: Predicting Wage from Age
@@ -184,6 +181,8 @@ Sometimes, our features are not in the best format for our model to use effectiv
 Let's take a look at a few variables in our data set `jobs`.
 
 ```{r}
+set.seed(1) # ensure we all see the same sample 
+
 jobs %>% 
   select(hours_weekly, union, state) %>% 
   slice_sample(n=10)
@@ -335,15 +334,6 @@ fitted_model
 💡 **Tip**: In this example, we have used ordinary least squares for our regression model. Ridge and lasso regression are two other techniques that can be useful to reduce or remove the coefficients on variables that do not add much to our example. 
 
 
-## 🥊 Challenge 4: Other models
-
-There are a variety of models you can fit using `parsnip`: [here](https://parsnip.tidymodels.org/reference/index.html)). Try out different models on your own and analyze what you're seeing in the model output.
-
-```{r}
-#model2 <- linear_reg()
-#model2
-```
-
 # Step 4: Evaluating the Model
 
 Now that we have a (very) basic model, we need to determine how well it works to solve the problem of estimating the relationship. We prefer to have a quantitative approach to estimate effectiveness to compare different models or tweak our model to improve performance. In `tidymodels` this approach is empirically data-driven. This means that we use the test data to measure the model's effectiveness.
@@ -398,12 +388,17 @@ We saw above that we could examine the coefficients of the fitted model. We can 
 tidy(fitted_model)
 ```
 
+
+
+
 The nice thing about this function is that it provides the estimates, standard errors, p-values, etc.
 
 An important aspect of machine learning is being able to interpret what our model is telling us. What can we say about how each of the features corresponds with the output, according to the linear model?
 
 For example, the age coefficient tells us that hourly_wage increases by roughly 7 cents for every one-year increase in age.
 
-## [KQ: CONSIDER ADDING AGE2]
+
+
+
 
 Congratulations, you've trained your first machine learning model in `tidymodels`! In Part 2 of the workshop, we will further develop the workflow to other machine learning problems.
