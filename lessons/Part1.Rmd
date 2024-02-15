@@ -76,8 +76,6 @@ Linear regression is a widely used statistical method that models the relationsh
 
 ![Linear Regression](../images/linear_regression_line.png)
 
-[kq: find graph that doesn't use IV and DV language]
-
 Mathematically, we suppose that there is a relationship between the output variable and the features, which we can write in a general model form as:
 
 $Y = f(\textbf{X})+ \epsilon$
@@ -154,7 +152,7 @@ Now that we have a better sense of our data's structure, let's start building ou
 
 To do so, we will draw primarily on `tidymodels`, an ecosystem of R packages designed to provide a consistent and tidy interface for modeling and machine learning tasks. It is built on top of the principles of the `tidyverse` and shares a consistent design philosophy, making it easy to integrate with other `tidyverse` packages like `dplyr` and `ggplot2`.
 
-[KQ NOTE: LOOKING FOR GOOD DIAGRAM OF ML PIPELINE, HAVING TROUBLE FINDING A GOOD ONE FOR SUPERVISED ML, WILL MAKE OWN--\> SET EXPECTATIONS FOR WHAT WE'LL COVER IN PART 1 AND 2]
+![ML Pipeline](../images/r_ml.jpeg)
 
 We will follow these steps:
 
@@ -181,7 +179,7 @@ Sometimes, our features are not in the best format for our model to use effectiv
 Let's take a look at a few variables in our data set `jobs`.
 
 ```{r}
-set.seed(1) # ensure we all see the same sample 
+set.seed(100) # ensure we all see the same sample 
 
 jobs %>% 
   select(hours_weekly, union, state) %>% 
@@ -190,30 +188,21 @@ jobs %>%
 
 🔔 **Question 2**: What are the data types for these three variables? What are some issues that might arise if we were to plug these data into a linear regression model?
 
-**Solution:** Looking at the first 10 rows, we see that `hours_weekly` is a numeric variable with missing values; `union` is a binary categorical variable with two values; and `state` is categorical variable with many values. If we were to include these variables in a linear regression model as is, we would run into a few issues. 
-
-#### Categorical Variables
-
-Let's first look at `state`, which is a numeric variable that corresponds to a state's FIPS code, the census ID for the various state and territories in the United States. For value labels, refer to the data dictionary in the companion guide. 
+**Solution:** Looking at the first 10 rows, we see that `hours_weekly` is a numeric variable with missing values; `union` is a binary categorical variable with two values; and `state` is categorical variable with many values. If we were to include these variables in a linear regression model as is, we would run into a few issues.
 
 #### Missing Values
 
-We can also see that `hours_weekly` has missing values, which is a common problem in real world data. Depending on the use, in your own work you may choose to drop data with missing values, or impute missing values based on certain criteria. In this example, we will drop rows with missing values, but in a later example, we will add imputation to our pre-processing.
+We can see that `hours_weekly` has missing values, which is a common problem in real world data. Depending on the use, in your own work you may choose to drop data with missing values, or impute missing values based on certain criteria. In this example, we will drop rows with missing values, but in a later example, we will add imputation to our pre-processing.
 
 ## 🥊 Challenge 3: Assess Data Quality
 
-Determine the extent to which missing values are a problem in this data set.
+Determine the extent to which missing values are a problem in this data set. *Hint*: try using the `colSums()` function. 
 
 ```{r}
 colSums((is.na(jobs)))
 ```
 
 Now that we have a better sense of our data and the types of variables we have, let's proceed.
-
-#### Regularization 
-
-We can also see that `hours_weekly` has missing values, which is a common problem in real world data. Depending on the use, in your own work you may choose to drop data with missing values, or impute missing values based on certain criteria. In this example, we will drop rows with missing values, but in a later example, we will add imputation to our pre-processing.
-
 
 ## Recipes
 
@@ -224,12 +213,12 @@ A recipe is an object that defines the series of steps needed for any data proce
 Let's start by taking a look at a recipe used to an individual's hourly wage from other features:
 
 ```{r}
-wage_recipe <- 
+jobs_recipe <- 
   recipe(hourly_wage ~ ., data = jobs) %>%
   step_naomit(all_predictors()) %>%
   step_dummy(all_nominal_predictors()) %>% 
-  step_normalize(all_of(c("age", "hours_weekly")))
-wage_recipe
+  step_normalize("hours_weekly")
+jobs_recipe
 ```
 
 This recipe provides the model that we eventually want to run and a step to convert nominal features into dummy variables. This process is often called "one-hot encoding." Let's break this down one component at a time:
@@ -242,31 +231,9 @@ This recipe provides the model that we eventually want to run and a step to conv
 
 -   The function `all_nominal_predictors()` captures the names of any predictor columns that are currently factor or character.
 
--   The function `step_normalize()` normalizes/standardizes the variables so that they have a mean of zero and a standard deviation of one. This is often done for continuous variables before fitting a machine learning model to make sense of coefficients.
+-   The function `step_normalize()` normalizes/standardizes the variables so that they have a mean of zero and a standard deviation of one. This is often done for continuous variables before fitting a machine learning model to make sense of coefficients. However, it makes interpreting the coefficients more difficult. 
 
 `tidymodels` has a variety of data pre-processing step functions [available](https://recipes.tidymodels.org/reference/index.html). While we will not cover how to do so, it is also possible to write custom pre-processing functions.
-
-## Applying a `recipe` to Data
-
-Thus far, we have created a recipe, or a set of instructions, but we have not applied it to data. To do so, we need to use two functions: `prep()` and `bake()`.
-
-First, we `prep()` any recipe with at least one pre-processing operation. `prep()` applies the recipe to the training data, and returns an updated recipe with the appropriate estimates. We can think of prep in the baking analogy as getting all your ingredients ready to go on the counter. After we `prep()` the recipe, we have to `bake()` the recipe by taking the pre-processing steps and applying them to a data set.
-
-```{r}
-prepped_recipe <- prep(wage_recipe)
-prepped_recipe
-```
-
-Now, let's bake:
-
-```{r}
-baked_jobs <- bake(prepped_recipe, new_data = jobs)
-baked_jobs 
-```
-
-🔔 **Question 2**: Take a look at the columns in the `baked_jobs` data. What has changed?
-
-*Solution*:
 
 # Step 2: Train-Test Split
 
@@ -318,21 +285,21 @@ You'll notice that `linear_reg` has several input arguments we can specify, incl
 For now, we should be fine using the default arguments. So, we start by creating a model.
 
 ```{r}
-model <- linear_reg()
+model <- linear_reg() 
 model
 ```
 
-Next, we fit the model using an R formula:
+Now that we've initialized a basic linear model, let's apply our pre-processing recipe (i.e., set of instructions) to our data. We can do this smoothly using a `workflow()`. 
 
-```{r fit_model}
-fitted_model <- model %>% 
-  fit(hourly_wage ~ age + race + education + sex + hispanic + marital_status + worker_status + union + hours_weekly + as.factor(state),
-      data = jobs_train)
-fitted_model
+```{r}
+jobs_wflow <- workflow() %>% 
+  add_recipe(jobs_recipe) %>%
+  add_model(model)
+
+# obtain predictions 
+jobs_fit <- fit(jobs_wflow, jobs_train)
+jobs_fit %>% tidy()
 ```
-
-💡 **Tip**: In this example, we have used ordinary least squares for our regression model. Ridge and lasso regression are two other techniques that can be useful to reduce or remove the coefficients on variables that do not add much to our example. 
-
 
 # Step 4: Evaluating the Model
 
@@ -348,13 +315,18 @@ The general syntax for a metrics function in `tidymodels` is as follows:
 
 where the data argument is a data frame or tibble, and the truth argument is the column with observed outcome values. Additional arguments (...) can be used to specify columns containing features.
 
-To use this function, we need predictions from the model. The `predict()` method can be used to obtain a tibble with the predictions from our model on new data. We can match these values with the corresponding observed outcome values.
+Now, we can perform the evaluation. The full suite of metrics functions is available [here](https://yardstick.tidymodels.org/reference/index.html). Since our running example is a linear regression, let's start with $R^2$, since that's among the easiest metrics to interpret:
 
-```{r predictions}
-results <- predict(fitted_model, new_data = jobs_test) %>%
-  bind_cols(jobs_test %>% select(hourly_wage))
-results
+```{r}
+# Predict new observations of our model fit with augment() 
+results <- augment(jobs_fit, jobs_test)
+# Obtain R-squared
+rsq_trad(results, truth = hourly_wage, estimate = .pred) 
 ```
+
+
+💡 **Tip**: In this example, we have used ordinary least squares for our regression model. Ridge and lasso regression are two other techniques that can be useful to reduce or remove the coefficients on variables that do not add much to our example. 
+
 
 ```{r plot_predictions}
 # We can plot the data prior to computing metrics for a visual inspection of fit
@@ -366,13 +338,7 @@ results %>%
   coord_obs_pred()
 ```
 
-Now, we can perform the evaluation. The full suite of metrics functions is available [here](https://yardstick.tidymodels.org/reference/index.html). Since our running example is a linear regression, let's start with $R^2$, since that's among the easiest metrics to interpret:
-
-```{r}
-rsq_trad(results, truth = hourly_wage, estimate = .pred)
-```
-
-We can do multiple metrics at once, though. Let's pick three common metrics for linear regression models - $R^2$, Root Mean Square Error (RMSE), and Mean Absolute Error (MAE) - and evaluate them at the same time using `yardstick`.
+We can do multiple metrics at once, though. Let's pick three common metrics for linear regression models - $R^2$, Root Mean Square Error (RMSE), and Mean Absolute Error (MAE) - and evaluate them at the same time using the `yardstick` package.
 
 ```{r evaluate_metrics}
 # Make a set of metrics
@@ -380,25 +346,6 @@ jobs_metrics <- metric_set(rmse, rsq, mae)
 jobs_metrics(results, truth = hourly_wage, estimate = .pred)
 ```
 
-## Interpreting the Model
-
-We saw above that we could examine the coefficients of the fitted model. We can view a tidy version of these results to better analyze them:
-
-```{r}
-tidy(fitted_model)
-```
-
-
-
-
 The nice thing about this function is that it provides the estimates, standard errors, p-values, etc.
-
-An important aspect of machine learning is being able to interpret what our model is telling us. What can we say about how each of the features corresponds with the output, according to the linear model?
-
-For example, the age coefficient tells us that hourly_wage increases by roughly 7 cents for every one-year increase in age.
-
-
-
-
 
 Congratulations, you've trained your first machine learning model in `tidymodels`! In Part 2 of the workshop, we will further develop the workflow to other machine learning problems.

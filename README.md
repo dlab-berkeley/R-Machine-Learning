@@ -31,7 +31,7 @@ Some topics covered include:
 -   Algorithms - linear regression, logistic regression, and random
     forest
 -   Cross-validation
--   Hyperparamter tuning
+-   Hyperparameter tuning
 -   Regularization - ridge, lasso, and elastic net
 
 By the end of the workshop, learners should feel prepared to explore

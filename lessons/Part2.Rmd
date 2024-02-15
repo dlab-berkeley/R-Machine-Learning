@@ -39,15 +39,11 @@ Before we dive into today's material, let's load our libraries
 `tidymodels` and `tidyverse` libraries.
 
 ```{r install, include=FALSE}
-# install.packages(c("tidyverse","tidymodels"))
 library(tidymodels)
 library(tidyverse)
 
 # Prefer tidymodels functions in any case of name conflict
 tidymodels::tidymodels_prefer() 
-
-# set seed for reproducibility 
-set.seed(123)
 ```
 
 # Other Tasks in Supervised Machine Learning: Classification
@@ -64,8 +60,10 @@ because we have a set of labeled training data that we can use to build
 a classifier. Now, however, we have access to different techniques
 because the structure of our outcome variable is categorical.
 
-📝 **Poll 1**: Identify which of the following are classification
-problems in machine learning.
+## 📝 **Poll 1**:
+
+Identify which of the following are classification problems in machine
+learning.
 
 1.  An advertiser is interested in the relationship between age and the
     number of hours of YouTube consumed.
@@ -98,18 +96,20 @@ vote2020 <- read.csv("../data/vote2020.csv",row.names = NULL)
 summary(vote2020)
 ```
 
-## Exploratory Analysis
+# Exploratory Analysis
 
 Recall that the first step in machine learning (and most analyses) is to
 explore the data we're working with to get a sense of its shape and
 anticipate problems that may arise.
 
-🥊 **Challenge 1**: Perform exploratory analyses on the `vote2020` data
-set, keeping in mind that today's goal is to predict `voted`. What do
-you notice about the data?
+## 🥊 **Challenge 1**:
+
+Perform exploratory analyses on the `vote2020` data set, keeping in mind
+that today's goal is to predict `voted`. What do you notice about the
+data?
 
 ```{r}
-# Load necessary libraries
+# create bar chart of voting percentages by state 
 vote2020 %>%
   group_by(state) %>%
   summarise(voted_percentage = mean(voted, na.rm = TRUE) * 100) %>%
@@ -125,19 +125,21 @@ vote2020 %>%
     theme_minimal()
 ```
 
-## Train-Test Split
+# Train-Test Split
 
 Recall from Part 1 that a critical first step in machine learning is
 partitioning our data into training and test sets.
 
-🔔 **Question 1**: Using the entire `vote2020` data set for model
-training resulted in impressively high accuracy during evaluation.
-However, upon deploying this model to predict voter turnout for an
-upcoming election, the predictions significantly diverged from actual
-turnout, with many discrepancies in who was predicted to vote versus who
-actually voted. The model's near-perfect performance in development
-starkly contrasted its poor real-world prediction outcomes, indicating a
-potential oversight in the model training and evaluation process.
+## 🔔 **Question 1**:
+
+Using the entire `vote2020` data set for model training resulted in
+impressively high accuracy during evaluation. However, upon deploying
+this model to predict voter turnout for an upcoming election, the
+predictions significantly diverged from actual turnout, with many
+discrepancies in who was predicted to vote versus who actually voted.
+The model's near-perfect performance in development starkly contrasted
+its poor real-world prediction outcomes, indicating a potential
+oversight in the model training and evaluation process.
 
 **Answer 1**: The key issue is that the model was never tested on unseen
 data. By using the entire data set for training, the model essentially
@@ -159,7 +161,7 @@ vote_train <- training(vote_split)
 vote_test <- testing(vote_split)
 ```
 
-## Pre-Processing
+# Pre-Processing
 
 In our example from Part 1, we prepared our data for analysis by
 recoding categorical variables and normalizing numeric ones using
@@ -184,31 +186,48 @@ There are other ways to impute, but these are good starting points. The
 way to perform imputation in a `recipe` is via the `step_impute_*`
 functions.
 
-🥊 **Challenge 2**: Using the same logic from Part 1, create your own
-recipe called `voterecipe` that lays out the steps for pre-processing
-the data. Instead of dropping rows with missing values, use
-`step_impute_median` to impute numeric variables and `step_impute_mode`
-to impute categorical variables.
+## 🥊 **Challenge 2**:
+
+Using the same logic from Part 1, create your own recipe called
+`voterecipe` that lays out the steps for pre-processing the data.
+Instead of dropping rows with missing values, use `step_impute_median`
+to impute numeric variables and `step_impute_mode` to impute categorical
+variables.
 
 ```{r}
 voterecipe <- 
   recipe(voted ~ ., data = vote_train) %>%
   step_impute_median(all_numeric_predictors()) %>%
   step_impute_mode(all_nominal_predictors()) %>%
-  step_dummy(all_nominal_predictors()) %>% 
-  step_normalize(all_of(c("age")))
+  step_dummy(all_nominal_predictors()) 
 ```
 
 This pre-processing will allow us to take advantage of samples with
 missing data, even if it comes at a little cost to accuracy. Imputation
 is often a necessary step, since it's common to have missing data.
 
-## Developing and Evaluating Models
+## 🔔 **Question 2**:
 
-Now that we've performed exploratory analyses, pre-processing, and a
-train-test split, let's go ahead and train our model. We will create a
+Notice that we have only applied our recipe to the training data so far.
+Explain why it is important to perform imputation separately on the
+training and test sets rather than imputing missing values before
+splitting the data set. In your answer, consider the concepts of model
+evaluation and the application of the model to unseen data.
+
+**Answer 2**: We want to keep our training and test sets separate. If we
+impute missing values in the entire data set using the mean, the mean
+calculation will include information from both the training and test
+sets. This means the model gets indirectly exposed to information from
+the test set during training, which can lead to overly optimistic
+performance estimates and a model that may not perform as well on truly
+unseen data. This concept is referred to as 'data leakage.'
+
+# Developing and Evaluating Models
+
+Now that we've performed exploratory analyses, a train-test split, and
+pre-processing, let's go ahead and train our model. We will create a
 classifier (i.e., a model that predicts membership in a group) with two
-methods: logistic regression and decision trees.
+methods: logistic regression and random forest.
 
 #### Algorithm 1: Logistic Regression
 
@@ -234,17 +253,6 @@ coefficient represents a vector of coefficients.
 Here's how to fit classification problems in `tidymodels` using logistic
 regression.
 
-Let's go ahead and perform the training and test splits for the `vote`
-data set:
-
-```{r}
-# Perform splits
-vote2020$voted <- as.factor(vote2020$voted)
-class_split <- initial_split(vote2020, prop = 0.75)
-class_train <- training(class_split)
-class_test <- testing(class_split)
-```
-
 In `tidymodels`, creating a logistic regression follows the exact same
 procedure as a linear regression. This time, however, we will use
 `logistic_reg()` to initiate the function. Let's create the model:
@@ -254,43 +262,31 @@ procedure as a linear regression. This time, however, we will use
 logistic_model <- logistic_reg(mode = "classification")
 ```
 
-Next, let's create a `recipe` for pre-processing:
+Now, we let's fit the model on the training data:
 
 ```{r}
-# Recipe for classifying defaults
-class_recipe <- recipe(voted ~ ., data = class_train) %>%
-  step_impute_median(all_numeric_predictors()) %>%
-  step_impute_mode(all_nominal_predictors()) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_of(c("age")))
-  
-```
-
-Now, we create our workflow, and fit the model:
-
-```{r}
-# Create workflow 
-class_wflow <- workflow() %>%
-  add_recipe(class_recipe) %>%
+vote_wflow <- workflow() %>%
+  add_recipe(voterecipe) %>%
   add_model(logistic_model)
 
-# Fit the workflow
-class_fit <- class_wflow %>% 
-  fit(data = class_train)
+vote_fit <- fit(vote_wflow, vote_train)
+vote_fit %>% tidy()
 ```
 
 Finally, let's use augment from the `yardstick` package to obtain the
 predictions, and take a look at them:
 
 ```{r}
-predictions <- augment(class_fit, new_data = class_test)
-predictions
+logistic_predictions <- augment(vote_fit, new_data = vote_test)
+logistic_predictions[,14:17] # look at last 4 columns 
 ```
 
-🔔 **Question 2**: Notice that new three columns have appeared in our
-data set. What do these values mean? What are they telling us?
+## 🔔 **Question 3**:
 
-**Answer 2**: `.pred_class` corresponds to the value our algorithm is
+Notice that new three columns have appeared in our data set. What do
+these values mean? What are they telling us?
+
+**Answer 3**: `.pred_class` corresponds to the value our algorithm is
 predicting, i.e., whether the person voted in the election or not. This
 was determined using the two variables `.pred_0` and `.pred_1`, which
 represent the predictions from the logistic regression. If membership in
@@ -300,18 +296,11 @@ take a value of 1.
 To evaluate the model, we'll use the `accuracy` function again:
 
 ```{r}
-accuracy(predictions, truth = voted, estimate = .pred_class, type="class")
+accuracy(logistic_predictions, truth = voted, estimate = .pred_class, type="class")
 ```
 
 We predicted the likelihood that someone voted in the last election with
-an accuracy of 81% - not bad! We can also create what's called a
-'confusion matrix' to see how well our model did at predicting each
-class.
-
-```{r}
-predictions %>%
-  conf_mat(truth = voted, estimate = .pred_class)
-```
+an accuracy of about 80% - not bad!
 
 💡 **Tip**: While we used logistic regression to predict a binary
 outcome `voted`, recall that this prediction is based on a range of
@@ -319,20 +308,45 @@ likelihoods from 0 to 1. These predictions can be useful to supplement
 causal inferences methods like propensity score matching that require
 precise likelihood estimates without having to explain why.
 
-But, there are many other options in our machine learning tool kit to get a better prediction. 
+We can also create what's called a 'confusion matrix' to see how well
+our model did at predicting each class. A confusion metric is helpful if
+you care about false positives and false negatives.
 
-#### Hyperparameter Tuning and Regularization 
+```{r}
+logistic_predictions %>%
+  conf_mat(truth = voted, estimate = .pred_class)
+```
+
+But, there are many other options in our machine learning arsenal to get
+a better prediction.
+
+#### Hyperparameter Tuning and Regularization
 
 Notice that until now, we have used the default settings for the linear
-and logistic regressions we have run. Looking at the documentation for logistic regression, `?logistic_reg()`, we see that there are many arguments that we left blank when we initialized our model above. These arguments, also known
-as 'parameters', correspond to statistical choices about how the model
-should operate or be structured. 
+and logistic regressions we have run. Looking at the documentation for
+logistic regression, `?logistic_reg()`, we see that there are many
+arguments that we left blank when we initialized our model above. These
+arguments, also known as 'parameters', correspond to statistical choices
+about how the model should operate or be structured.
 
-Some of these hyperparameters include 'engine', 'penalty', and 'mixture': 
+Some of these hyperparameters include 'engine', 'penalty', and
+'mixture':
 
-* Engine: Different engines can implement regression through various algorithms or computational approaches. When you specify an engine for logistic regression in R, you're choosing the particular set of algorithms and optimizations that will be used to train your model.
+-   Engine: Different engines can implement regression through various
+    algorithms or computational approaches. When you specify an engine
+    for logistic regression in R, you're choosing the particular set of
+    algorithms and optimizations that will be used to train your model.
 
-- Penalty: "penalty" refers to a regularization technique used to prevent overfitting by discouraging overly complex models. It does this by adding a penalty to the loss function for large coefficients. Common penalties are L1 (Lasso), which can shrink some coefficients to zero (thus performing feature selection), and L2 (Ridge), which shrinks all coefficients toward zero but typically doesn't set any to exactly zero. The penalty helps in creating simpler, more generalizable models that perform better on unseen data by prioritizing the most influential features and reducing the model's sensitivity to the training data's noise.
+-   Penalty: "penalty" refers to a regularization technique used to
+    prevent overfitting by discouraging overly complex models. It does
+    this by adding a penalty to the loss function for large
+    coefficients. Common penalties are L1 (Lasso), which can shrink some
+    coefficients to zero (thus performing feature selection), and L2
+    (Ridge), which shrinks all coefficients toward zero but typically
+    doesn't set any to exactly zero. The penalty helps in creating
+    simpler, more generalizable models that perform better on unseen
+    data by prioritizing the most influential features and reducing the
+    model's sensitivity to the training data's noise.
 
 For example, we can add a 'penalty' on the size of the coefficients of a
 model and reduce the likelihood of overfitting. Lasso, ridge, and
@@ -341,151 +355,241 @@ shrink to zero coefficients on variables that are picking up on a lot of
 noise. The broad technique of reducing overfitting is called
 'regularization.'
 
-🥊 **Challenge 3**: We have reproduced the original code from above that trained a basic classifier on our voting data set without changing any of the hyperparameters, as well as the code that obtains predictions. Re-run this code several times, but each time change the hyperparameters in the model specification. For mixture, select values between 0 and 1 inclusive; for penalty, include a non-negative number; and for engine, select either "glmnet" or "glm". How does the accuracy change? 
+## 🥊 **Challenge 3**:
+
+We have reproduced the original code from above that trained a basic
+classifier on our voting data set without changing any of the
+hyperparameters, as well as the code that obtains predictions. Re-run
+this code several times, but each time change the hyperparameters in the
+model specification. For mixture, select values between 0 and 1
+inclusive; for penalty, include a non-negative number; and for engine,
+select either "glmnet" or "glm". How does the accuracy change?
 
 ```{r}
-chal3_logistic_model <- logistic_reg(mode = "classification", 
-                                     mixture=0, # ranges between 0 and 1
-                                     penalty = 0, # greater >= 0 
-                                     engine="glmnet") 
+chal3_model <- logistic_reg(mode = "classification", 
+                               engine="glmnet", 
+                               penalty=1, 
+                               mixture=.5)
 
-# Create workflow 
 chal3_wflow <- workflow() %>%
-  add_recipe(class_recipe) %>%
-  add_model(chal3_logistic_model)
+  add_recipe(voterecipe) %>%
+  add_model(chal3_model)
 
-# Fit the workflow
-chal3_fit <- chal3_wflow %>% 
-  fit(data = class_train)
+chal3_fit <- fit(chal3_wflow, vote_train)
 
-# obtain predictions 
-chal3_predictions <- augment(chal3_fit, new_data = class_test)
+chal3_predictions <- augment(chal3_fit, new_data = vote_test)
+
 accuracy(chal3_predictions, truth = voted, estimate = .pred_class, type="class")
+
 ```
+
+It's nice that we can do different types of regularization, but how do
+we know what value of the mixture coefficient to pick? In machine
+learning, this value - which we choose before fitting the model - is
+known as a hyperparameter. Since hyperparameters are chosen *before* we
+fit the model, we can't just choose them based off the training data.
+So, how should we go about conducting **hyperparameter tuning**:
+identifying the best hyperparameter(s) to use?
+
+Let's think back to our original goal. We want a model that generalizes
+to unseen data. So, ideally, the choice of the hyperparameter should be
+such that the performance on unseen data is the best. We can't use the
+test set for this, but what if we had another set of held-out data?
+
+# Hyperparameter tuning
 
 Cue hyperparameter tuning! Hyperparameter tuning is crucial in machine
 learning as it directly impacts the performance and effectiveness of
 models. By fine-tuning hyperparameters, practitioners can optimize
 models to achieve higher accuracy, better generalize to unseen data, and
 prevent issues like overfitting or underfitting. This process allows for
-the customization of models to specific datasets and objectives,
+the customization of models to specific data sets and objectives,
 enabling the discovery of the best configuration for a given problem.
 
+## Choosing Hyperparameters: Validation Sets
 
+It's nice that we can do different types of regularization, but how do
+we know what value of the mixture coefficient to pick? In machine
+learning, this value - which we choose before fitting the model - is
+known as a hyperparameter. Since hyperparameters are chosen *before* we
+fit the model, we can't just choose them based off the training data.
+So, how should we go about conducting **hyperparameter tuning**:
+identifying the best hyperparameter(s) to use?
 
+Let's think back to our original goal. We want a model that generalizes
+to unseen data. So, ideally, the choice of the hyperparameter should be
+such that the performance on unseen data is the best. We can't use the
+test set for this, but what if we had another set of held-out data?
 
+This is the basis for a **validation set**. If we had extra held-out
+data set, we could try a bunch of hyperparameters on the training set,
+and see which one results in a model that performs the best on the
+validation set. We then would choose that hyperparameter, and use it to
+refit the model on both the training data and validation data. We could
+then, finally, evaluate on the test set.
 
+![Validation set](../images/validation.png)
 
-APPENDIX: ADVANCED TOPICS
+# Cross Validation
 
-# Random Forests
+We just formulated the process of choosing a hyperparameter with a
+single validation set. However, there are many ways to perform
+validation. The most common way is **cross-validation**.
+Cross-validation is motivated by the concern that we may not choose the
+best hyperparameter if we're only validating on a small fraction of the
+data. If the validation sample, just by chance, contains specific data
+samples, we may bias our model in favor of those samples, and limit its
+generalizability.
 
-The last algorithm we'll look at is the random forest, which is an
-**ensemble** of decision trees. Ensembling is a common machine learning
-approach in which we combine many smaller models into one final
-predictions.
+So, during cross-validation, we effectively validate on the *entire*
+training set, by breaking it up into folds. Here's the process: We can
+use a process called cross-validation to do select the best
 
-A decision tree is a method of stratifying the feature space into a
-number of simple regions. Usually, trees use the mean or mode dependent
-variable value for the training data in the region to which it belongs
-(James *et al.* 2021). Trees can be applied to both regression or
-classification problems. To build a single tree, we:
+1.  Perform a train/test split, as you normally would.
+2.  Choose a number of folds - the most common is $K=5$ - and split up
+    your training data into those equally sized "folds".
+3.  For each hyperparameter you want to tune, specify the possible
+    values it could take. Then, for each hyperparameter:
+    1.  For *each* *value* of that hyperparameter, we're going to fit
+        $K$ models. Let's assume $K=5$. The first model will be fit on
+        Folds 2-5, and validated on Fold 1. The second model will be fit
+        on Folds 1, 3-5, and validated on Fold 2. This process continues
+        for all 5 splits.
+    2.  The performance of each value of that hyperparameter is
+        summarized by the average predictive performance on all 5
+        held-out folds. We then choose the hyperparameter value that had
+        the best average performance.
+4.  We can then refit a new model to the entire training set, using our
+    chosen hyperparameter(s). That's our final model - evaluate it on
+    the test set!
 
-1.  Divide the feature space into distinct regions.
-2.  For every observation that falls into a distinct region ($R_j$) we
-    make the same prediction.
+![cross-validation](https://scikit-learn.org/stable/_images/grid_search_cross_validation.png)
 
-Trees by themselves turn out to not be very good at prediction compared
-to other supervised learning model. However, combine them into a *random
-forest* and they become very useful, especially if the relationship is
-nonlinear and complex. A random forest (Breiman 2001) is an example of
-an ensemble method, which is an approach that combines many simple
-models in order to get a single powerful prediction model.
+## Hyperparameter Tuning and Cross Validation in Practice
 
-In a random forest, we build a number of decision trees on bootstrapped
-training samples. Each tree is grown independently on random samples of
-the observations, a process known as *bagging.*
+We need to do two things:
 
-When building the trees, each time a split occurs, we take a random
-sample of features to be split candidates instead of the full set of
-features. By choosing a random subset each time, a random forest
-decorrelates the individual decision trees. This makes the resulting
-average less variable.
+1.  Decide to perform hyperparameter tuning on the penalty value, and
+2.  Do so using cross-validation.
 
-Let's try fitting a random forest using the `rand_forest` model:
+The `tidymodels` suite has two packages to help us with these steps:
+`tune` and `rsample`.
+
+Let's illustrate both these packages in the classification example. We
+already have a recipe set up:
 
 ```{r}
-# Create model specification 
-rf_model <- rand_forest(
-  mtry = tune(),
-  min_n = tune(),
-  trees = 50) %>%
-  set_mode("classification") %>%
-  set_engine("ranger") 
-# Create recipe
-rf_recipe <- recipe(union ~ ., data = class_train) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_predictors())
+voterecipe
+```
+
+When specifying the model, however, we're going to do something slightly
+different:
+
+```{r}
+tuned_logistic_model <- logistic_reg(
+  mixture = tune(),
+  penalty = tune(),
+  engine = "glmnet")
+```
+
+We passed in a function called `tune()`. This signals to `tidymodels`
+that we'd like to tune this hyperparameter. How do we indicate what
+values we should test during tuning? There is a package called `dials`
+which allows a variety of ways to customize this. We're going to keep
+things simple and focus on the most basic choice of tuning: a grid
+search. In this case, we specify a range of values, and we'll test every
+single one for the hyperparameter. We use the `grid_regular` function
+for this procedure:
+
+```{r}
+# Create grid of parameters
+cv_grid <- grid_regular(
+  mixture(range = c(0, 1)), 
+  # The penalty function is a special dials function
+  penalty(range = c(-5, 5)), 
+  levels=10)
+
+print(cv_grid)
+```
+
+Next, we need to specify how we will perform cross-validation. From the
+`rsample` package, we can use the function `vfold_cv` to create the
+training folds. In this case, `v` is what's used for "K".
+
+```{r}
+vote_folds <- vfold_cv(vote_train, v = 5)
+vote_folds
+```
+
+We have a tuned model, a grid of hyperparameters, and a set of folds. We
+create our workflow as before. But, to train the workflow, we use the
+`tune_grid` function. All the pieces we've created are passed into this
+function:
+
+```{r} 
 # Create workflow
-rf_wflow <- workflow() %>%
-  add_recipe(rf_recipe) %>%
-  add_model(rf_model)
+vote_wflow <- workflow() %>%
+  add_recipe(voterecipe) %>%
+  add_model(tuned_logistic_model)
+
+# Tune and fit models with tune_grid()
+vote_cv_fit <- tune_grid(
+  # The workflow
+  vote_wflow, 
+  # The folds we created
+  resamples = vote_folds,
+  # The grid of hyperparameters
+  grid = cv_grid)
 ```
 
-Random forests are known for having many hyperparameters than need
-tuning. In this case, we need to tune two: `mtry` and `min_n`. Let's
-create the `rsample` object for using 3 folds. Then, we'll tune the
-grid. This time, we'll just specify `grid = 10` to indicate we want 10
-hyperparameter configurations. The `dials` package, in this case, will
-automatically choose those values for us.
+There are some nice plotting functions we can use to visualize how the
+performance varies as a function of the regularization. For example,
+check out the `autoplot()` function:
 
 ```{r}
-# Use cross-validation to tune our model appropriately 
-trees_folds <- vfold_cv(class_train, v = 3)
-
-# Find appropriate tuning parameters
-set.seed(345)
-rf_fit <- tune_grid(
-  object = rf_wflow, 
-  resamples = trees_folds, 
-  grid = 10)
+autoplot(vote_cv_fit)
 ```
 
-We're going to use a new metric this time called the ROC-AUC. This is
-the Area Under the Curve for the Receiver-Operator Characteristic. The
-main takeaway for this metric is that it tells us how good our
-probability predictions are, rather than just the predictions. In
-classification settings, it's often preferable to the accuracy. It
-varies from 0 to 1, where larger is better:
+What does this tell us about how much regularization we should use?
+
+Of course, we can automate this procedure. The `select_best` function
+will do this for us:
 
 ```{r}
-# View the ROC metric across models 
-rf_fit %>% 
-  collect_metrics() %>%
-  filter(.metric == "roc_auc") %>%
-  select(mean, min_n, mtry)
+# Select best metric according to accuracy 
+vote_cv_best <- select_best(vote_cv_fit, metric = "accuracy")
+vote_cv_best
 ```
 
-Now, let's finalize the workflow:
+We can see a penalty column, where it appears to have chosen the
+smallest penalty. What do we do at this point?
+
+Recall that, during cross-validation, we split up the data and examine
+performance across many folds. Now that we know what is likely the best
+penalty, we can re-train on the *entire* training set.
+
+We do this with the `finalize_workflow` function.
 
 ```{r}
-# Select the best RF model 
-best_rf_auc <- select_best(rf_fit, "roc_auc")
-
-final_rf_wflow <- rf_wflow %>%
-  finalize_workflow(parameters = best_rf_auc) %>%
-  fit(data = class_train)
+# Get our final model and finalize workflow
+cv_final <- vote_wflow %>%
+  finalize_workflow(parameters = vote_cv_best) %>%
+  fit(data = vote_train)
+cv_final %>% tidy()
 ```
 
-And evaluate the ROC AUC:
+And lastly, we'll examine the performance on the test set:
 
 ```{r}
-final_rf_wflow %>%
-  augment(new_data = class_test) %>%
-  roc_auc(truth = default, estimate = .pred_No)
+cv_predictions <- augment(cv_final, new_data = vote_test)
+
+accuracy(cv_predictions, truth = voted, estimate = .pred_class, type="class")
 ```
 
-That's rather good ROC performance!
+If we compare this to the model we fit earlier where we made a guess at
+the best value for the penalty hyperparameter, it reveals that we that
+we can fit better models via cross-validation than with just a single
+training set. This is reflected in the higher accuracy.
 
 # Overview
 
@@ -495,9 +599,3 @@ more to explore. The best way to keep pushing forward is to choose a
 problem to study, and refer to the documentation when you need help. The
 website Kaggle has an abundance of good data science problems to work on
 if you need help choosing a task!
-
-# Other classification problems
-
--   sentiment analysis with natural language processing--positive,
-    negative, or neutral problems.
--   
