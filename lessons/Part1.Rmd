@@ -54,7 +54,9 @@ Machine learning and traditional statistics differ in their primary objectives a
 
 Machine learning places a strong emphasis on predictive accuracy, while traditional statistics emphasizes hypothesis testing and parameter estimation within a framework of statistical significance.
 
-📝 **Poll 1:** Which of these research applications are well suited for machine learning methods? Select all that apply.
+## 📝 Poll 1: Machine Learning Questions
+
+Which of these research applications are well suited for machine learning methods? Select all that apply.
 
 1.  Diagnosing a patient's illness based on a cluster of symptoms and other health data.
 
@@ -92,7 +94,7 @@ First, we'll load the data:
 jobs <- read.csv("../data/jobs.csv",row.names = NULL)
 
 # visually inspect the data frame 
-summary(jobs)
+view(jobs)
 ```
 
 ## 🥊 Challenge 1: Predicting Wage from Age
@@ -118,7 +120,9 @@ $\texttt{hourly_wage} = f(\texttt{age}) + \epsilon$
 
 , where our y is `hourly_wage` and our x is `age`.
 
-🔔 **Question 1**: Notice that we have called *y* the "outcome" or "target" variable, and the set of $\mathbf{X}$ variables "features" or "inputs." How does this language reflect a conceptual shift from traditional statistics, where we typically use language like "independent" and "dependent" variables?
+## 🔔 Question 1: Terminology
+
+Notice that we have called *y* the "outcome" or "target" variable, and the set of $\mathbf{X}$ variables "features" or "inputs." How does this language reflect a conceptual shift from traditional statistics and causal inference, where we typically use language like "independent" and "dependent" variables?
 
 **Solution**: We are focused on predicting the value of y, and are moving away from traditional statistics by not making assumptions about the nature of the causal relationship between our x and our y.
 
@@ -132,7 +136,7 @@ Importantly, we rarely predict with only a single feature! In the multivariate c
 
 ## 🥊 Challenge 2: Exploratory Analyses
 
-In Challenge 1, we looked at the relationship between a continuous x feature, `age`, and our target, `hourly_wage`. Perform your own exploratory analyses, but this time examine at least one categorical feature (or features) that you think might be useful in predicting `hourly_wage`. In the companion resource guide, we provide a comprehensive data dictionary.
+In Challenge 1, we looked at the relationship between a continuous x feature, `age`, and our target, `hourly_wage`. Perform your own exploratory analyses, but this time examine at least one categorical feature (or features) that you think might be useful in predicting `hourly_wage`. In the companion resource guide, we provide a comprehensive data dictionary. Hint: one way to explore continuous variables is looking at overlapping histograms. Which features seem most interesting to you?
 
 ```{r}
 # Histogram of Wage by Sex
@@ -152,7 +156,7 @@ Now that we have a better sense of our data's structure, let's start building ou
 
 To do so, we will draw primarily on `tidymodels`, an ecosystem of R packages designed to provide a consistent and tidy interface for modeling and machine learning tasks. It is built on top of the principles of the `tidyverse` and shares a consistent design philosophy, making it easy to integrate with other `tidyverse` packages like `dplyr` and `ggplot2`.
 
-![ML Pipeline](../images/r_ml.jpeg)
+![ML Pipeline](../images/ML_Pipeline.jpeg)
 
 We will follow these steps:
 
@@ -186,7 +190,9 @@ jobs %>%
   slice_sample(n=10)
 ```
 
-🔔 **Question 2**: What are the data types for these three variables? What are some issues that might arise if we were to plug these data into a linear regression model?
+## 🔔 Question 2: Data Types
+
+What are the data types for these three variables? What are some issues that might arise if we were to plug these data into a linear regression model?
 
 **Solution:** Looking at the first 10 rows, we see that `hours_weekly` is a numeric variable with missing values; `union` is a binary categorical variable with two values; and `state` is categorical variable with many values. If we were to include these variables in a linear regression model as is, we would run into a few issues.
 
@@ -196,7 +202,7 @@ We can see that `hours_weekly` has missing values, which is a common problem in 
 
 ## 🥊 Challenge 3: Assess Data Quality
 
-Determine the extent to which missing values are a problem in this data set. *Hint*: try using the `colSums()` function. 
+Determine the extent to which missing values are a problem in this data set. *Hint*: try using the `colSums()` function. The documentation is available [here](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/colSums).
 
 ```{r}
 colSums((is.na(jobs)))
@@ -231,7 +237,7 @@ This recipe provides the model that we eventually want to run and a step to conv
 
 -   The function `all_nominal_predictors()` captures the names of any predictor columns that are currently factor or character.
 
--   The function `step_normalize()` normalizes/standardizes the variables so that they have a mean of zero and a standard deviation of one. This is often done for continuous variables before fitting a machine learning model to make sense of coefficients. However, it makes interpreting the coefficients more difficult. 
+-   The function `step_normalize()` normalizes/standardizes the variables so that they have a mean of zero and a standard deviation of one. This is often done for continuous variables before fitting a machine learning model so they are on the same scale. However, it makes interpreting the coefficients more difficult.
 
 `tidymodels` has a variety of data pre-processing step functions [available](https://recipes.tidymodels.org/reference/index.html). While we will not cover how to do so, it is also possible to write custom pre-processing functions.
 
@@ -289,7 +295,7 @@ model <- linear_reg()
 model
 ```
 
-Now that we've initialized a basic linear model, let's apply our pre-processing recipe (i.e., set of instructions) to our data. We can do this smoothly using a `workflow()`. 
+Now that we've initialized a basic linear model, let's apply our pre-processing recipe (i.e., set of instructions) to our data. We can do this smoothly using a `workflow()`.
 
 ```{r}
 jobs_wflow <- workflow() %>% 
@@ -324,9 +330,7 @@ results <- augment(jobs_fit, jobs_test)
 rsq_trad(results, truth = hourly_wage, estimate = .pred) 
 ```
 
-
-💡 **Tip**: In this example, we have used ordinary least squares for our regression model. Ridge and lasso regression are two other techniques that can be useful to reduce or remove the coefficients on variables that do not add much to our example. 
-
+💡 **Tip**: In this example, we have used ordinary least squares for our regression model. Ridge and lasso regression are two other techniques that can be useful to reduce or remove the coefficients on variables that do not add much to our example.
 
 ```{r plot_predictions}
 # We can plot the data prior to computing metrics for a visual inspection of fit
@@ -348,4 +352,47 @@ jobs_metrics(results, truth = hourly_wage, estimate = .pred)
 
 The nice thing about this function is that it provides the estimates, standard errors, p-values, etc.
 
-Congratulations, you've trained your first machine learning model in `tidymodels`! In Part 2 of the workshop, we will further develop the workflow to other machine learning problems.
+## 🥊 Challenge 4: Predicting Income
+
+Train a model to predict an individual's income `total_indiv_income` on `jobs_train` and evaluate the model on `jobs_train`. Note that this is related to, but not a direct function of, one's wage because income can come from multiple sources (e.g., retirement savings, investment income).
+
+First, create a recipe that gives a set of instructions for pre-processing.
+
+```{r}
+chal4_recipe <- 
+  recipe(total_indiv_income ~ ., data = jobs) %>% # tell r what our outcome variable is 
+  step_naomit(all_predictors()) %>% # drop records with missing values 
+  step_dummy(all_nominal_predictors()) # create dummy variables from categorical variables
+chal4_recipe
+```
+
+Next, create a workflow that applies our recipe (i.e., set of pre-processing instructions) and adds our linear model `model` that we initialized above. 
+
+```{r}
+chal4_wflow <- workflow() %>% 
+  add_recipe(chal4_recipe) %>% 
+  add_model(model)
+```
+
+Our workflow now contains all of the steps and instructions to train the model. `add_recipe` has laid out the pre-processing instructions, and `add_model` has specified that we will use our linear regression model `model` to fit to the training data. 
+
+```{r} 
+# obtain predictions 
+chal4_fit <- fit(chal4_wflow, jobs_train)
+chal4_fit %>% tidy()
+```
+
+Deploy our fitted model `chal4_fit` on the test set `jobs_test` to see how well it did at predicting an individual's income. 
+
+```{r}
+# Predict new observations of our model fit with augment() 
+chal4_results <- augment(chal4_fit, jobs_test)
+
+# Obtain R-squared
+chal4_metrics <- metric_set(rmse, rsq, mae)
+chal4_metrics(chal4_results, truth = total_indiv_income, estimate = .pred)
+```
+
+# Recap
+
+Congratulations, you've trained your first machine learning model in `tidymodels`! In Part 2 of the workshop, we will further develop the workflow to other machine learning problems. 
