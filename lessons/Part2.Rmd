@@ -17,10 +17,10 @@ covered:
     used to train our model, and a test set used to evaluate the model's
     performance.
 
--   The bias-variance tradeoff: the balance between the model's ability
+-   The bias-variance trade-off: the balance between the model's ability
     to capture the true underlying patterns of the training data (bias)
     and its flexibility to learn from specific instances within that
-    data (variance). This tradeoff matters because it directly affects
+    data (variance). This trade-off matters because it directly affects
     the generalization ability of the model to new, unseen data.
 
 -   Pre-processing: cleaning and transforming raw data into a suitable
@@ -87,7 +87,7 @@ learning.
 Now, let's load our primary data set for today's workshop: `vote2020`.
 Our goal is going to be predicting whether someone voted in the 2020
 election, perhaps to tailor engagement strategies toward those least
-likely to vote in an upcoming election.
+likely to vote in an upcoming election. These data are based on the Current Population Survey's [Voter Supplement](https://cps.ipums.org/cps/voter_sample_notes.shtml). 
 
 ```{r}
 vote2020 <- read.csv("../data/vote2020.csv",row.names = NULL)
@@ -132,10 +132,10 @@ partitioning our data into training and test sets.
 
 ## 🔔 Question 1: Train-Test Split
 
-Using the entire `vote2020` data set for model training resulted in
-impressively high accuracy during evaluation. However, upon deploying
-this model to predict voter turnout for an upcoming election, the
-predictions significantly diverged from actual turnout, with many
+A researcher used the entire `vote2020` data set to train a model that
+resulted in impressively high accuracy during evaluation. However, upon
+deploying this model to predict voter turnout for an upcoming election,
+the predictions significantly diverged from actual turnout, with many
 discrepancies in who was predicted to vote versus who actually voted.
 The model's near-perfect performance in development starkly contrasted
 its poor real-world prediction outcomes, indicating a potential
@@ -266,7 +266,7 @@ procedure as a linear regression. This time, however, we will use
 logistic_model <- logistic_reg(mode = "classification")
 ```
 
-Now, we let's fit the model on the training data:
+Now, let's fit the model on the training data. We first create a workflow that lists instructions for pre-processing and the model we want to use, and then apply it to the training data. 
 
 ```{r}
 vote_wflow <- workflow() %>%
@@ -297,7 +297,7 @@ represent the predictions from the logistic regression. If membership in
 group 1 (i.e., voted = 1) is greater than .5, then `.pred_class` will
 take a value of 1.
 
-To evaluate the model, we'll use the `accuracy` function again:
+To evaluate the model, we'll use the `accuracy` function:
 
 ```{r}
 accuracy(logistic_predictions, truth = voted, estimate = .pred_class, type="class")
@@ -307,20 +307,19 @@ We predicted the likelihood that someone voted in the last election with
 an accuracy of about 81% - not bad!
 
 We can also create what's called a 'confusion matrix' to see how well
-our model did at predicting each class. A confusion metric is helpful if
+our model did at predicting each class. A confusion matrix is helpful if
 you care about false positives (predicting 1 when the true value is 0)
 and false negatives (predicting 0 when the true value is 1). In the
 context of testing for Covid-19, we might want care more about failing
 to diagnose a person with the virus (i.e., a false negative) because the
-stakes are higher than
+stakes are higher. 
 
 ```{r}
 logistic_predictions %>%
   conf_mat(truth = voted, estimate = .pred_class)
 ```
 
-But, there are many other options in our machine learning arsenal to get
-a better prediction.
+So far we have trained a simple logistic regression model, there are many other options in our machine learning arsenal to get a better prediction.
 
 #### Hyperparameter Tuning and Regularization
 
@@ -369,7 +368,7 @@ engine, select either "glmnet" or "glm". How does the accuracy change?
 ```{r}
 chal3_model <- logistic_reg(mode = "classification", 
                                engine="glmnet", 
-                               penalty=1)
+                               penalty=0)
 
 chal3_wflow <- workflow() %>%
   add_recipe(voterecipe) %>%
@@ -479,10 +478,9 @@ tuned_logistic_model <- logistic_reg(
 
 We passed in a function called `tune()`. This signals to `tidymodels`
 that we'd like to tune this hyperparameter. How do we indicate what
-values we should test during tuning? There is a package called `dials`
-which allows a variety of ways to customize this. We're going to keep
+values we should test during tuning? We're going to keep
 things simple and focus on the most basic choice of tuning: a grid
-search. In this case, we specify a range of values, and we'll test every
+search. In this case, we specify a range of values, and then test every
 single one for the hyperparameter. We use the `grid_regular` function
 for this procedure:
 
@@ -500,7 +498,7 @@ print(cv_grid)
 We have a hyperparameter grid with 10 rows. What does each of these
 signify?
 
-**Solution 4**: Each is a potential combination of hyperparamters, or
+**Solution 4**: Each is a potential set of hyperparameters, or
 arguments, for our logistic regression. R will try each combination to
 find the one that generates the most accurate prediction. As we add more
 hyperparameters, the combinations will increase exponentially.
@@ -517,8 +515,7 @@ vote_folds
 ```
 
 We have a tuned model, a grid of hyperparameters, and a set of folds. We
-create our workflow as before. But, to train the workflow, we use the
-`tune_grid` function. All the pieces we've created are passed into this
+create our workflow as before: we input the recipe (i.e., the set of pre-processing instructions) and the model specification. But, to train the workflow, we use the `tune_grid` function. All the pieces we've created are passed into this
 function:
 
 ```{r}
@@ -542,16 +539,17 @@ performance varies as a function of the regularization. For example,
 check out the `autoplot()` function:
 
 ```{r}
-autoplot(vote_cv_fit)
+autoplot(vote_cv_fit, 
+         metric="accuracy") 
 ```
 
 Each of the ten points on this graph corresponds to a set of
-hyperparamters. We can see that the first combination yields an accuracy
-of about 81.11%. What does this tell us about how much regularization we
+hyperparameters. We can see that the third combination yields the highest accuracy
+of about 81.5%. What does this tell us about how much regularization we
 should use?
 
 Instead of picking the combination of hyperparamters that yields the
-best accuracy, we can automate this procedure. The `select_best`
+best accuracy by eye, we can automate this procedure. The `select_best`
 function will do this for us:
 
 ```{r}
@@ -560,19 +558,18 @@ vote_cv_best <- select_best(vote_cv_fit, metric = "accuracy")
 vote_cv_best
 ```
 
-We can see a penalty column, where it appears to have chosen the
-smallest penalty. What do we do at this point?
+Cross-validation selected a penalty value of 0.0017 as the best hyperparameter for our model. What do we do at this point?
 
 Recall that, during cross-validation, we split up the data and examine
 performance across many folds. Now that we know what is likely the best
-penalty, we can re-train on the *entire* training set.
+penalty, we can re-train on the *entire* training set to produce our final model.
 
 We do this with the `finalize_workflow` function.
 
 ```{r}
 # Get our final model and finalize workflow
 cv_final <- vote_wflow %>%
-  finalize_workflow(parameters = vote_cv_best) %>% 
+  finalize_workflow(parameters = vote_cv_best) %>% # use the best parameters 
   fit(data = vote_train)
 cv_final %>% tidy()
 ```
@@ -585,24 +582,28 @@ cv_predictions <- augment(cv_final, new_data = vote_test)
 accuracy(cv_predictions, truth = voted, estimate = .pred_class, type="class")
 ```
 
+## 🔔 Question 5: Accuracy on the Test Set
 
-## 🔔 Question 5: Accuracy on the Test Set 
-Notice our final accuracy on the test is about 80.85%, whereas our accuracy on the training set was higher at 81.11%. Why is our test accuracy lower? 
+Notice our final accuracy on the test is about 80.85%, whereas our
+accuracy on the training set was higher at 81.5%. Why is our test
+accuracy lower?
 
-**Solution 5**: We selected our hyperparameters (i.e., the penalty function) to yield the highest output specifically on our training set. 
+**Solution 5**: We selected our hyperparameters (i.e., the penalty
+function) to yield the highest output *specifically* on our training set. 
 
-## Hyperparameter Tuning vs. Default Arguments 
+## Hyperparameter Tuning vs. Default Arguments
+
 If we compare this to the original model we fit earlier where we made a
 guess at the best value for the penalty hyperparameter, it reveals that
 we that we can fit better models via cross-validation than with just a
 single training set. This is reflected in the higher accuracy compared
 with the model where we used the default arguments of `logistic_reg()`.
 
-# Concluding Remarks 
+# Concluding Remarks
 
 Congratulations, you've made it! We covered the basics of supervised
 machine learning in `tidymodels` in this workshop. However, there's much
 more to explore. The best way to keep pushing forward is to choose a
 problem to study, and refer to the documentation when you need help. The
-website Kaggle has an abundance of good data science problems to work on
+website [Kaggle](https://www.kaggle.com/) has many good data science problems to work on
 if you need help choosing a task!
