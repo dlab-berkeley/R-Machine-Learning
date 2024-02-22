@@ -1,0 +1,91 @@
+---
+title: "R Machine Learning Pilot (Companion Guide)"
+output: html_document
+---
+
+# Machine Learning Terminology
+
+-   Algorithm: machine learning models are implemented using algorithms, which are sets of rules or procedures that guide the learning process. Common algorithms include linear regression, decision trees, support vector machines, and neural networks.
+
+-   Feature: the input X variables used by the model to make predictions. They represent the characteristics or properties of the data.
+
+-   Hyperparameters: external configurations or settings for a model that are set before training. Examples include learning rate, regularization strength, and the number of hidden layers in a neural network.
+
+-   Model: a model is a representation of a real-world process or system that is learned from data. It is a mathematical or computational structure that captures patterns, relationships, and dependencies within the data, allowing the model to make predictions or decisions without being explicitly programmed for a specific task. The primary goal of building a model is to generalize its learning from the training data to new, unseen data.
+
+-   One-hot encoding: the process of converting categorical variables into a form that can be provided to machine learning algorithms to improve predictions. It works by creating binary columns for each category of the variable, which makes the representation of categorical data more expressive and suitable for algorithms that require numerical input, such as linear regression models.
+
+-   Target: the variable that the model aims to predict (i.e., Y). It is the output or response variable that the model learns to associate with the input features.
+
+-   Testing: after developing a model, it is tested on new, unseen data to evaluate its performance. Common evaluation metrics include accuracy, precision, recall, and mean squared error, depending on the type of problem (classification or regression).
+
+-   Training: the process of feeding labeled data (input features with corresponding target values) to the model to enable it to learn the patterns and relationships between features and the target variable.
+
+# Branches of Machine Learning
+
+-   Supervised Learning
+    -   Training data contains *labels* for the outcomes
+
+    -   Machine learning algorithm infers a function describing the relationship between the inputs and the output
+
+    -   Supervised is further divided into **regression** if predicting a continuous outcome, and **classification** if predicting a categorical outcome
+
+    -   Algorithm can be used on a new set of input data to infer the output
+
+    -   Examples: Linear Regression, Decision Trees, Support Vector Machines
+-   Unsupervised Learning
+    -   Training data does not contain any labels
+    -   Algorithm instead trains to uncover underlying patterns in the data
+    -   Used for clustering, dimensionality reduction, etc.
+    -   Examples: k-means, Principal Components Analysis, Singular Value Decomposition, Expectation-Maximization
+
+## Supervised Machine Learning: Regression and Classification
+
+-   Typically two tasks in supervised learning: regression and classification
+-   Regression
+    -   Predict a continuous outcome response from the input data
+    -   Ex. Ordinary Least Squares
+-   Classification
+    -   Predict membership in a group
+    -   Ex. Logistic Regression
+-   Several ML methods are well suited to both regression and classification problems
+-   An important first step in any supervised machine learning problem is to identify whether you're dealing with a regression or classification problem, and approach it accordingly
+
+## Bias-Variance Tradeoff
+
+-   Two goals:
+
+    -   Minimize *test bias*: This means using as much data as we can in the training phase, which necessarily means reducing the amount of test data available
+    -   Minimize *test variance*: But, we also want a decent number of points in the test set, otherwise the estimates will have large variances
+
+-   Fewer folds lead to higher test bias, but more folds lead to higher test variance
+
+-   **Bias**: The difference between a model's prediction and the actual value of an observation
+
+-   **Variance**: The complexity of the model
+
+$$
+Err(x) = Bias^2 + Variance + \epsilon
+$$
+
+## Cross-Validation
+
+-   Advantages:
+    -   Tends to avoid overfitting problems
+    -   Usable with relatively small datasets (compared to train/test/validation split)
+    -   Does not make the background assumptions required in information criteria approach
+-   Disadvantages:
+    -   Assumes that the out-of-sample data was drawn from the same population as the training data
+    -   Computationally VERY expensive
+-   k=5 or 10 is conventionally used, but it is by no means perfectly suited to every context
+-   In general, this problem lessens the more data you have
+
+## K-Fold CV Illustration
+
+![Illustration of k-fold cross validation](../images/cv.png)
+
+## Conclusion
+
+-   Machine Learning requires we split our data to evaluate our models
+-   Data splitting involves substantive choices on the part of the analyst
+-   Different techniques have different pros and cons, but the main issue comes down to bias-variance tradeoff

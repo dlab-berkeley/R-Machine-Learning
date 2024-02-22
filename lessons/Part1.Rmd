@@ -86,7 +86,7 @@ where $f$ is a fixed but unknown function of our feature vector $\textbf{X} = (X
 
 **Example 1: Employment Survey Data**
 
-To ground symbols in code, let's explore our primary data set for Part 1 of the workshop: the Current Population Survey (CPS).
+To ground symbols in code, let's explore our primary data set for Part 1 of the workshop: the Current Population Survey (CPS) from 2022. You can find more information about the data set and methodology [here](https://www.census.gov/programs-surveys/cps.html). 
 
 First, we'll load the data:
 
@@ -136,10 +136,10 @@ Importantly, we rarely predict with only a single feature! In the multivariate c
 
 ## 🥊 Challenge 2: Exploratory Analyses
 
-In Challenge 1, we looked at the relationship between a continuous x feature, `age`, and our target, `hourly_wage`. Perform your own exploratory analyses, but this time examine at least one categorical feature (or features) that you think might be useful in predicting `hourly_wage`. In the companion resource guide, we provide a comprehensive data dictionary. Hint: one way to explore continuous variables is looking at overlapping histograms. Which features seem most interesting to you?
+In Challenge 1, we looked at the relationship between a continuous x feature, `age`, and our target, `hourly_wage`. Perform your own exploratory analyses, but this time examine at least one categorical feature (or features) that you think might be useful in predicting `hourly_wage`. Which features seem most interesting to you? *Hint:* one way to explore continuous variables is by looking at overlapping histograms. Check out the documentation [here](https://ggplot2.tidyverse.org/reference/geom_histogram.html). 
 
 ```{r}
-# Histogram of Wage by Sex
+# Histogram of Wage by Full- or Part-time Status
 jobs %>%
   ggplot(aes(x = hourly_wage, fill = worker_status)) +
   geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
@@ -183,7 +183,7 @@ Sometimes, our features are not in the best format for our model to use effectiv
 Let's take a look at a few variables in our data set `jobs`.
 
 ```{r}
-set.seed(100) # ensure we all see the same sample 
+set.seed(1) # ensure we all see the same sample 
 
 jobs %>% 
   select(hours_weekly, union, state) %>% 
@@ -192,9 +192,9 @@ jobs %>%
 
 ## 🔔 Question 2: Data Types
 
-What are the data types for these three variables? What are some issues that might arise if we were to plug these data into a linear regression model?
+What are the data types for these three variables? If you are familiar with linear regression, can you think of issues that might arise if we were to plug these variables into a regression model?
 
-**Solution:** Looking at the first 10 rows, we see that `hours_weekly` is a numeric variable with missing values; `union` is a binary categorical variable with two values; and `state` is categorical variable with many values. If we were to include these variables in a linear regression model as is, we would run into a few issues.
+**Solution:** Looking at the first 10 rows, we see that `hours_weekly` is a numeric variable with missing values; `union` is a binary categorical variable with two values; and `state` is categorical variable with many values. Including `hours_weekly` will produce an error because linear regression cannot inherently handle missing values. As for `union` and `state`, regression models are mathematical models that operate on numerical data. Categorical variables represent qualities or characteristics that can't be directly quantified in a way that naturally fits into these models. Recoding transforms these qualitative attributes into a numerical format that the model can interpret and use.
 
 #### Missing Values
 
@@ -216,7 +216,7 @@ The process of preparing our features (i.e., variables) to improve the modeling 
 
 A recipe is an object that defines the series of steps needed for any data processing for the model. Unlike the formula method inside a modeling function, the recipe defines the steps without immediately executing them; it is only a specification of what should be done.
 
-Let's start by taking a look at a recipe used to an individual's hourly wage from other features:
+Let's start by creating a recipe for predicting an individual's hourly wage on a set of features:
 
 ```{r}
 jobs_recipe <- 
@@ -229,7 +229,7 @@ jobs_recipe
 
 This recipe provides the model that we eventually want to run and a step to convert nominal features into dummy variables. This process is often called "one-hot encoding." Let's break this down one component at a time:
 
--   The call to `recipe()` with a formula tells R the roles of the variables. Here, our dependent variable is `hourly_wage`.
+-   The call to `recipe()` with a formula tells R the roles of the variables. Here, our outcome variable is `hourly_wage`.
 
 -   What follows the `recipe` call is a series of `steps`. The first one is a step called `step_naomit()`, which omits any samples with missing data. Each step function accepts the columns that it operates on. In this case, we apply `step_naomit` to every column, using the `all_predictors()` function. We will drop rows that contain missing values in this example, but a later example will impute missing values to avoid losing data.
 
@@ -260,7 +260,7 @@ It is essential to understand this trade-off because it helps in building models
 
 Performing a train-test split is an approach to managing the bias-variance trade-off. It refers to the division of a data set into two subsets: one for training the model and another for evaluating its performance. The training set is used to teach the model, while the test set serves as an independent data set to assess how well the model generalizes to new, unseen data. Once we have partitioned our data into the training and test sets, we will not touch the test set until we are ready to evaluate our model.
 
-🔔 **Question 2**: How does splitting our data into the training and test sets address the bias-variance trade-off described earlier?
+🔔 **Question 2**: How does splitting our data into the training and test sets address the bias-variance trade-off described above?
 
 **Answer**: This split is crucial for preventing overfitting, providing an unbiased evaluation of the model's performance, and ensuring that the model can make accurate predictions on data it has not encountered during training.
 
@@ -338,9 +338,12 @@ results %>%
   ggplot(aes(x = hourly_wage, y = .pred)) +
   geom_abline(lty = 2, color="red") +
   geom_point(alpha = 0.7, color="blue") +
-  labs(x = "Hourly Wage", y = "Predicted Values") +
+  labs(title = "Predicted versus actual values of wage", 
+       x = "Hourly Wage", 
+       y = "Predicted Values") +
   coord_obs_pred()
 ```
+Inspecting this plot by eye, it looks like the model is struggling to predict wages for higher earners. 
 
 We can do multiple metrics at once, though. Let's pick three common metrics for linear regression models - $R^2$, Root Mean Square Error (RMSE), and Mean Absolute Error (MAE) - and evaluate them at the same time using the `yardstick` package.
 
@@ -350,8 +353,6 @@ jobs_metrics <- metric_set(rmse, rsq, mae)
 jobs_metrics(results, truth = hourly_wage, estimate = .pred)
 ```
 
-The nice thing about this function is that it provides the estimates, standard errors, p-values, etc.
-
 ## 🥊 Challenge 4: Predicting Income
 
 Train a model to predict an individual's income `total_indiv_income` on `jobs_train` and evaluate the model on `jobs_train`. Note that this is related to, but not a direct function of, one's wage because income can come from multiple sources (e.g., retirement savings, investment income).
@@ -360,13 +361,13 @@ First, create a recipe that gives a set of instructions for pre-processing.
 
 ```{r}
 chal4_recipe <- 
-  recipe(total_indiv_income ~ ., data = jobs) %>% # tell r what our outcome variable is 
+  recipe(total_income ~ ., data = jobs) %>% # tell r what our outcome variable is 
   step_naomit(all_predictors()) %>% # drop records with missing values 
   step_dummy(all_nominal_predictors()) # create dummy variables from categorical variables
 chal4_recipe
 ```
 
-Next, create a workflow that applies our recipe (i.e., set of pre-processing instructions) and adds our linear model `model` that we initialized above. 
+Next, create a workflow that applies our recipe (i.e., set of pre-processing instructions) and adds our linear model `model` that we initialized above.
 
 ```{r}
 chal4_wflow <- workflow() %>% 
@@ -374,15 +375,15 @@ chal4_wflow <- workflow() %>%
   add_model(model)
 ```
 
-Our workflow now contains all of the steps and instructions to train the model. `add_recipe` has laid out the pre-processing instructions, and `add_model` has specified that we will use our linear regression model `model` to fit to the training data. 
+Our workflow now contains all of the steps and instructions to train the model. `add_recipe` has laid out the pre-processing instructions, and `add_model` has specified that we will use our linear regression model `model` to fit to the training data.
 
-```{r} 
+```{r}
 # obtain predictions 
 chal4_fit <- fit(chal4_wflow, jobs_train)
 chal4_fit %>% tidy()
 ```
 
-Deploy our fitted model `chal4_fit` on the test set `jobs_test` to see how well it did at predicting an individual's income. 
+Deploy our fitted model `chal4_fit` on the test set `jobs_test` to see how well it did at predicting an individual's income.
 
 ```{r}
 # Predict new observations of our model fit with augment() 
@@ -390,9 +391,9 @@ chal4_results <- augment(chal4_fit, jobs_test)
 
 # Obtain R-squared
 chal4_metrics <- metric_set(rmse, rsq, mae)
-chal4_metrics(chal4_results, truth = total_indiv_income, estimate = .pred)
+chal4_metrics(chal4_results, truth = total_income, estimate = .pred)
 ```
 
 # Recap
 
-Congratulations, you've trained your first machine learning model in `tidymodels`! In Part 2 of the workshop, we will further develop the workflow to other machine learning problems. 
+Congratulations, you've trained your first machine learning model in `tidymodels`! In Part 2 of the workshop, we will further develop the workflow to other machine learning problems.
