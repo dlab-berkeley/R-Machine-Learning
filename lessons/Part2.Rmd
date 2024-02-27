@@ -80,14 +80,16 @@ learning.
 5.  A political scientist wants to classify Twitter posts as positive or
     negative.
 
-**Solution 1: (2), (4), and (5).**
+
 
 # Today's Data: Voting Patterns in the 2020 Election
 
 Now, let's load our primary data set for today's workshop: `vote2020`.
 Our goal is going to be predicting whether someone voted in the 2020
 election, perhaps to tailor engagement strategies toward those least
-likely to vote in an upcoming election. These data are based on the Current Population Survey's [Voter Supplement](https://cps.ipums.org/cps/voter_sample_notes.shtml). 
+likely to vote in an upcoming election. These data are based on the
+Current Population Survey's [Voter
+Supplement](https://cps.ipums.org/cps/voter_sample_notes.shtml).
 
 ```{r}
 vote2020 <- read.csv("../data/vote2020.csv",row.names = NULL)
@@ -109,20 +111,9 @@ that today's goal is to predict `voted`. What do you notice about the
 data?
 
 ```{r}
-# create bar chart of voting percentages by state 
-vote2020 %>%
-  group_by(state) %>%
-  summarise(voted_percentage = mean(voted, na.rm = TRUE) * 100) %>%
-  ungroup() %>%
-  ggplot(aes(x = reorder(state,-voted_percentage), y = voted_percentage)) +
-    geom_bar(stat = "identity", fill = "blue") +
-    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1)) +  # Adjusting x-axis text +
-  coord_flip() + 
-  scale_y_continuous(limits=c(0,100)) + 
-    labs(title = "Percentage of People Who Voted in Each State",
-         x = "State",
-         y = "Percentage Voted") +
-    theme_minimal()
+
+ ## YOUR CODE HERE 
+
 ```
 
 # Train-Test Split
@@ -142,14 +133,7 @@ its poor real-world prediction outcomes, indicating a potential
 oversight in the model training and evaluation process. Why might that
 be?
 
-**Answer 1**: The key issue is that the model was never tested on unseen
-data. By using the entire data set for training, the model essentially
-"memorized" the data, including any noise or patterns specific to that
-set of individuals. This led to overfitting, where the model excelled at
-predicting the training data but failed to generalize to new, unseen
-data. Since the model's performance was only evaluated on data it had
-already seen, its apparent accuracy was misleading, giving a false sense
-of confidence in its predictive capabilities.
+**Answer 1**: 
 
 Now that we have a better sense of the data, let's go ahead and split
 `vote2020` into training and test sets:
@@ -199,10 +183,10 @@ to impute categorical variables.
 
 ```{r}
 voterecipe <- 
-  recipe(voted ~ ., data = vote_train) %>%
-  step_impute_median(all_numeric_predictors()) %>%
-  step_impute_mode(all_nominal_predictors()) %>%
-  step_dummy(all_nominal_predictors()) 
+  recipe(_____ ~ ., data = _____) %>%
+  step_impute_median(_____) %>%
+  step_impute_mode(_____) %>%
+  step_dummy(_____) 
 ```
 
 This pre-processing will allow us to take advantage of samples with
@@ -217,13 +201,7 @@ training and test sets rather than imputing missing values before
 splitting the data set. Consider why we don't want the data we train our
 model on to be exposed to our test data set in the first place.
 
-**Answer 2**: We want to keep our training and test sets separate. If we
-impute missing values in the entire data set using the mean, the mean
-calculation will include information from both the training and test
-sets. This means the model gets indirectly exposed to information from
-the test set during training, which can lead to overly optimistic
-performance estimates and a model that may not perform as well on truly
-unseen data. This concept is referred to as 'data leakage.'
+**Answer 2**: 
 
 # Developing and Evaluating Models
 
@@ -266,7 +244,9 @@ procedure as a linear regression. This time, however, we will use
 logistic_model <- logistic_reg(mode = "classification")
 ```
 
-Now, let's fit the model on the training data. We first create a workflow that lists instructions for pre-processing and the model we want to use, and then apply it to the training data. 
+Now, let's fit the model on the training data. We first create a
+workflow that lists instructions for pre-processing and the model we
+want to use, and then apply it to the training data.
 
 ```{r}
 vote_wflow <- workflow() %>%
@@ -290,12 +270,7 @@ logistic_predictions[,14:17] # look at last 4 columns
 Notice that four new columns have appeared in our data set. What do
 these values mean? What are they telling us?
 
-**Answer 3**: `.pred_class` corresponds to the value our algorithm is
-predicting, i.e., whether the person voted in the election or not. This
-was determined using the two variables `.pred_0` and `.pred_1`, which
-represent the predictions from the logistic regression. If membership in
-group 1 (i.e., voted = 1) is greater than .5, then `.pred_class` will
-take a value of 1.
+**Answer 3**: 
 
 To evaluate the model, we'll use the `accuracy` function:
 
@@ -312,14 +287,16 @@ you care about false positives (predicting 1 when the true value is 0)
 and false negatives (predicting 0 when the true value is 1). In the
 context of testing for Covid-19, we might want care more about failing
 to diagnose a person with the virus (i.e., a false negative) because the
-stakes are higher. 
+stakes are higher.
 
 ```{r}
 logistic_predictions %>%
   conf_mat(truth = voted, estimate = .pred_class)
 ```
 
-So far we have trained a simple logistic regression model, there are many other options in our machine learning arsenal to get a better prediction.
+So far we have trained a simple logistic regression model, there are
+many other options in our machine learning arsenal to get a better
+prediction.
 
 #### Hyperparameter Tuning and Regularization
 
@@ -368,17 +345,17 @@ engine, select either "glmnet" or "glm". How does the accuracy change?
 ```{r}
 chal3_model <- logistic_reg(mode = "classification", 
                                engine="glmnet", 
-                               penalty=0)
+                               penalty=____)
 
 chal3_wflow <- workflow() %>%
-  add_recipe(voterecipe) %>%
-  add_model(chal3_model)
+  add_recipe(____) %>%
+  add_model(____)
 
-chal3_fit <- fit(chal3_wflow, vote_train)
+chal3_fit <- fit(chal3_wflow, ____)
 
-chal3_predictions <- augment(chal3_fit, new_data = vote_test)
+chal3_predictions <- augment(____, new_data = ____)
 
-accuracy(chal3_predictions, truth = voted, estimate = .pred_class, type="class")
+accuracy(chal3_predictions, truth = ____, estimate = .pred_class, type="class")
 ```
 
 It's nice that we can do different types of regularization, but how do
@@ -478,11 +455,11 @@ tuned_logistic_model <- logistic_reg(
 
 We passed in a function called `tune()`. This signals to `tidymodels`
 that we'd like to tune this hyperparameter. How do we indicate what
-values we should test during tuning? We're going to keep
-things simple and focus on the most basic choice of tuning: a grid
-search. In this case, we specify a range of values, and then test every
-single one for the hyperparameter. We use the `grid_regular` function
-for this procedure:
+values we should test during tuning? We're going to keep things simple
+and focus on the most basic choice of tuning: a grid search. In this
+case, we specify a range of values, and then test every single one for
+the hyperparameter. We use the `grid_regular` function for this
+procedure:
 
 ```{r}
 # Create grid of parameters
@@ -498,10 +475,7 @@ print(cv_grid)
 We have a hyperparameter grid with 10 rows. What does each of these
 signify?
 
-**Solution 4**: Each is a potential set of hyperparameters, or
-arguments, for our logistic regression. R will try each combination to
-find the one that generates the most accurate prediction. As we add more
-hyperparameters, the combinations will increase exponentially.
+**Solution 4**: 
 
 ## 🎬 **Demo**: Performing Hyperparameter Tuning with Cross Validation
 
@@ -515,8 +489,10 @@ vote_folds
 ```
 
 We have a tuned model, a grid of hyperparameters, and a set of folds. We
-create our workflow as before: we input the recipe (i.e., the set of pre-processing instructions) and the model specification. But, to train the workflow, we use the `tune_grid` function. All the pieces we've created are passed into this
-function:
+create our workflow as before: we input the recipe (i.e., the set of
+pre-processing instructions) and the model specification. But, to train
+the workflow, we use the `tune_grid` function. All the pieces we've
+created are passed into this function:
 
 ```{r}
 # Create workflow
@@ -544,9 +520,9 @@ autoplot(vote_cv_fit,
 ```
 
 Each of the ten points on this graph corresponds to a set of
-hyperparameters. We can see that the third combination yields the highest accuracy
-of about 81.5%. What does this tell us about how much regularization we
-should use?
+hyperparameters. We can see that the third combination yields the
+highest accuracy of about 81.5%. What does this tell us about how much
+regularization we should use?
 
 Instead of picking the combination of hyperparamters that yields the
 best accuracy by eye, we can automate this procedure. The `select_best`
@@ -558,11 +534,13 @@ vote_cv_best <- select_best(vote_cv_fit, metric = "accuracy")
 vote_cv_best
 ```
 
-Cross-validation selected a penalty value of 0.0017 as the best hyperparameter for our model. What do we do at this point?
+Cross-validation selected a penalty value of 0.0017 as the best
+hyperparameter for our model. What do we do at this point?
 
 Recall that, during cross-validation, we split up the data and examine
 performance across many folds. Now that we know what is likely the best
-penalty, we can re-train on the *entire* training set to produce our final model.
+penalty, we can re-train on the *entire* training set to produce our
+final model.
 
 We do this with the `finalize_workflow` function.
 
@@ -584,12 +562,9 @@ accuracy(cv_predictions, truth = voted, estimate = .pred_class, type="class")
 
 ## 🔔 Question 5: Accuracy on the Test Set
 
-Notice our final accuracy on the test is about 80.85%, whereas our
-accuracy on the training set was higher at 81.5%. Why is our test
-accuracy lower?
+Notice our final accuracy on the test set is lower than our accuracy on the training set. Why might that be? 
 
-**Solution 5**: We selected our hyperparameters (i.e., the penalty
-function) to yield the highest output *specifically* on our training set. 
+**Solution 5**: 
 
 ## Hyperparameter Tuning vs. Default Arguments
 
@@ -605,5 +580,5 @@ Congratulations, you've made it! We covered the basics of supervised
 machine learning in `tidymodels` in this workshop. However, there's much
 more to explore. The best way to keep pushing forward is to choose a
 problem to study, and refer to the documentation when you need help. The
-website [Kaggle](https://www.kaggle.com/) has many good data science problems to work on
-if you need help choosing a task!
+website [Kaggle](https://www.kaggle.com/) has many good data science
+problems to work on if you need help choosing a task!

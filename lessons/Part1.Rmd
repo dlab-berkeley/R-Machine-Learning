@@ -68,7 +68,7 @@ Which of these research applications are well suited for machine learning method
 
 5.  Predicting an individual's hourly wage based on demographic, economic, and geographic information.
 
-**Solutions**: 1, 3, 5. Good news! We'll be covering how to address (3) and (5) in Parts 1 and 2 in this workshop!
+**Solutions**: 
 
 # Example of a Machine Learning Problem
 
@@ -103,12 +103,12 @@ Let's try to predict an individual's hourly wage based on their age alone using 
 
 ```{r}
 jobs %>%
-  ggplot(aes(x = age, y = hourly_wage)) +
+  ggplot(aes(x = ____, y = ____)) +
   geom_point(color = "blue") +
   geom_smooth(method = "lm", color = "red", se = F) + 
   labs(title = "Scatter Plot of Age vs. Hourly Wage with Best Fit Line", 
-       x = "Age", 
-       y = "Hourly Wage") + 
+       x = "____", 
+       y = "____") + 
   theme_minimal() 
 ```
 
@@ -124,7 +124,7 @@ $\texttt{hourly_wage} = f(\texttt{age}) + \epsilon$
 
 Notice that we have called *y* the "outcome" or "target" variable, and the set of $\mathbf{X}$ variables "features" or "inputs." How does this language reflect a conceptual shift from traditional statistics and causal inference, where we typically use language like "independent" and "dependent" variables?
 
-**Solution**: We are focused on predicting the value of y, and are moving away from traditional statistics by not making assumptions about the nature of the causal relationship between our x and our y.
+**Solution**: 
 
 # Refining Our Research Question
 
@@ -139,14 +139,14 @@ Importantly, we rarely predict with only a single feature! In the multivariate c
 In Challenge 1, we looked at the relationship between a continuous x feature, `age`, and our target, `hourly_wage`. Perform your own exploratory analyses, but this time examine at least one categorical feature (or features) that you think might be useful in predicting `hourly_wage`. Which features seem most interesting to you? *Hint:* one way to explore continuous variables is by looking at overlapping histograms. Check out the documentation [here](https://ggplot2.tidyverse.org/reference/geom_histogram.html). 
 
 ```{r}
-# Histogram of Wage by Full- or Part-time Status
+# Histogram of Wage by and some categorical variable of your choice 
 jobs %>%
-  ggplot(aes(x = hourly_wage, fill = worker_status)) +
+  ggplot(aes(x = ____, fill = ____)) +
   geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
-  labs(title = "Overlapping Histogram of Hourly Wage by Time Contract",
-       x = "Wage",
+  labs(title = "Overlapping Histogram of Hourly Wage by ____",
+       x = "____",
        y = "Frequency",
-       fill = "Full- or Part-Time Status") +
+       fill = "____") +
   theme_minimal()
 ```
 
@@ -194,7 +194,7 @@ jobs %>%
 
 What are the data types for these three variables? If you are familiar with linear regression, can you think of issues that might arise if we were to plug these variables into a regression model?
 
-**Solution:** Looking at the first 10 rows, we see that `hours_weekly` is a numeric variable with missing values; `union` is a binary categorical variable with two values; and `state` is categorical variable with many values. Including `hours_weekly` will produce an error because linear regression cannot inherently handle missing values. As for `union` and `state`, regression models are mathematical models that operate on numerical data. Categorical variables represent qualities or characteristics that can't be directly quantified in a way that naturally fits into these models. Recoding transforms these qualitative attributes into a numerical format that the model can interpret and use.
+**Solution:** 
 
 #### Missing Values
 
@@ -205,7 +205,7 @@ We can see that `hours_weekly` has missing values, which is a common problem in 
 Determine the extent to which missing values are a problem in this data set. *Hint*: try using the `colSums()` function. The documentation is available [here](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/colSums).
 
 ```{r}
-colSums((is.na(jobs)))
+colSums((is.na(____)))
 ```
 
 Now that we have a better sense of our data and the types of variables we have, let's proceed.
@@ -262,7 +262,7 @@ Performing a train-test split is an approach to managing the bias-variance trade
 
 🔔 **Question 2**: How does splitting our data into the training and test sets address the bias-variance trade-off described above?
 
-**Answer**: This split is crucial for preventing overfitting, providing an unbiased evaluation of the model's performance, and ensuring that the model can make accurate predictions on data it has not encountered during training.
+**Answer**: 
 
 ## Performing the split
 
@@ -361,7 +361,7 @@ First, create a recipe that gives a set of instructions for pre-processing.
 
 ```{r}
 chal4_recipe <- 
-  recipe(total_income ~ ., data = jobs) %>% # tell r what our outcome variable is 
+  recipe(____ ~ ., data = ____) %>% # tell r what our outcome variable is 
   step_naomit(all_predictors()) %>% # drop records with missing values 
   step_dummy(all_nominal_predictors()) # create dummy variables from categorical variables
 chal4_recipe
@@ -371,15 +371,15 @@ Next, create a workflow that applies our recipe (i.e., set of pre-processing ins
 
 ```{r}
 chal4_wflow <- workflow() %>% 
-  add_recipe(chal4_recipe) %>% 
-  add_model(model)
+  add_recipe(____) %>% 
+  add_model(____)
 ```
 
 Our workflow now contains all of the steps and instructions to train the model. `add_recipe` has laid out the pre-processing instructions, and `add_model` has specified that we will use our linear regression model `model` to fit to the training data.
 
 ```{r}
 # obtain predictions 
-chal4_fit <- fit(chal4_wflow, jobs_train)
+chal4_fit <- fit(____, ____)
 chal4_fit %>% tidy()
 ```
 
@@ -387,11 +387,11 @@ Deploy our fitted model `chal4_fit` on the test set `jobs_test` to see how well 
 
 ```{r}
 # Predict new observations of our model fit with augment() 
-chal4_results <- augment(chal4_fit, jobs_test)
+chal4_results <- augment(____, ____)
 
 # Obtain R-squared
 chal4_metrics <- metric_set(rmse, rsq, mae)
-chal4_metrics(chal4_results, truth = total_income, estimate = .pred)
+chal4_metrics(chal4_results, truth = ____, estimate = ____)
 ```
 
 # Recap

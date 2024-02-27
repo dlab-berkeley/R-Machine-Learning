@@ -1,5 +1,5 @@
 ---
-title: "R Machine Learning Pilot (Day 2 Solutions)"
+title: "R Machine Learning Pilot (Day 2)"
 output: html_notebook
 editor_options: 
   markdown: 
@@ -87,7 +87,9 @@ learning.
 Now, let's load our primary data set for today's workshop: `vote2020`.
 Our goal is going to be predicting whether someone voted in the 2020
 election, perhaps to tailor engagement strategies toward those least
-likely to vote in an upcoming election. These data are based on the Current Population Survey's [Voter Supplement](https://cps.ipums.org/cps/voter_sample_notes.shtml). 
+likely to vote in an upcoming election. These data are based on the
+Current Population Survey's [Voter
+Supplement](https://cps.ipums.org/cps/voter_sample_notes.shtml).
 
 ```{r}
 vote2020 <- read.csv("../data/vote2020.csv",row.names = NULL)
@@ -266,7 +268,9 @@ procedure as a linear regression. This time, however, we will use
 logistic_model <- logistic_reg(mode = "classification")
 ```
 
-Now, let's fit the model on the training data. We first create a workflow that lists instructions for pre-processing and the model we want to use, and then apply it to the training data. 
+Now, let's fit the model on the training data. We first create a
+workflow that lists instructions for pre-processing and the model we
+want to use, and then apply it to the training data.
 
 ```{r}
 vote_wflow <- workflow() %>%
@@ -312,14 +316,16 @@ you care about false positives (predicting 1 when the true value is 0)
 and false negatives (predicting 0 when the true value is 1). In the
 context of testing for Covid-19, we might want care more about failing
 to diagnose a person with the virus (i.e., a false negative) because the
-stakes are higher. 
+stakes are higher.
 
 ```{r}
 logistic_predictions %>%
   conf_mat(truth = voted, estimate = .pred_class)
 ```
 
-So far we have trained a simple logistic regression model, there are many other options in our machine learning arsenal to get a better prediction.
+So far we have trained a simple logistic regression model, there are
+many other options in our machine learning arsenal to get a better
+prediction.
 
 #### Hyperparameter Tuning and Regularization
 
@@ -478,11 +484,11 @@ tuned_logistic_model <- logistic_reg(
 
 We passed in a function called `tune()`. This signals to `tidymodels`
 that we'd like to tune this hyperparameter. How do we indicate what
-values we should test during tuning? We're going to keep
-things simple and focus on the most basic choice of tuning: a grid
-search. In this case, we specify a range of values, and then test every
-single one for the hyperparameter. We use the `grid_regular` function
-for this procedure:
+values we should test during tuning? We're going to keep things simple
+and focus on the most basic choice of tuning: a grid search. In this
+case, we specify a range of values, and then test every single one for
+the hyperparameter. We use the `grid_regular` function for this
+procedure:
 
 ```{r}
 # Create grid of parameters
@@ -515,8 +521,10 @@ vote_folds
 ```
 
 We have a tuned model, a grid of hyperparameters, and a set of folds. We
-create our workflow as before: we input the recipe (i.e., the set of pre-processing instructions) and the model specification. But, to train the workflow, we use the `tune_grid` function. All the pieces we've created are passed into this
-function:
+create our workflow as before: we input the recipe (i.e., the set of
+pre-processing instructions) and the model specification. But, to train
+the workflow, we use the `tune_grid` function. All the pieces we've
+created are passed into this function:
 
 ```{r}
 # Create workflow
@@ -544,9 +552,9 @@ autoplot(vote_cv_fit,
 ```
 
 Each of the ten points on this graph corresponds to a set of
-hyperparameters. We can see that the third combination yields the highest accuracy
-of about 81.5%. What does this tell us about how much regularization we
-should use?
+hyperparameters. We can see that the third combination yields the
+highest accuracy of about 81.5%. What does this tell us about how much
+regularization we should use?
 
 Instead of picking the combination of hyperparamters that yields the
 best accuracy by eye, we can automate this procedure. The `select_best`
@@ -558,11 +566,13 @@ vote_cv_best <- select_best(vote_cv_fit, metric = "accuracy")
 vote_cv_best
 ```
 
-Cross-validation selected a penalty value of 0.0017 as the best hyperparameter for our model. What do we do at this point?
+Cross-validation selected a penalty value of 0.0017 as the best
+hyperparameter for our model. What do we do at this point?
 
 Recall that, during cross-validation, we split up the data and examine
 performance across many folds. Now that we know what is likely the best
-penalty, we can re-train on the *entire* training set to produce our final model.
+penalty, we can re-train on the *entire* training set to produce our
+final model.
 
 We do this with the `finalize_workflow` function.
 
@@ -584,12 +594,11 @@ accuracy(cv_predictions, truth = voted, estimate = .pred_class, type="class")
 
 ## 🔔 Question 5: Accuracy on the Test Set
 
-Notice our final accuracy on the test is about 80.85%, whereas our
-accuracy on the training set was higher at 81.5%. Why is our test
-accuracy lower?
+Notice our final accuracy on the test set is lower than our accuracy on the training set. Why might that be? 
 
 **Solution 5**: We selected our hyperparameters (i.e., the penalty
-function) to yield the highest output *specifically* on our training set. 
+function) to yield the highest output *specifically* on our training
+set.
 
 ## Hyperparameter Tuning vs. Default Arguments
 
@@ -605,5 +614,5 @@ Congratulations, you've made it! We covered the basics of supervised
 machine learning in `tidymodels` in this workshop. However, there's much
 more to explore. The best way to keep pushing forward is to choose a
 problem to study, and refer to the documentation when you need help. The
-website [Kaggle](https://www.kaggle.com/) has many good data science problems to work on
-if you need help choosing a task!
+website [Kaggle](https://www.kaggle.com/) has many good data science
+problems to work on if you need help choosing a task!
