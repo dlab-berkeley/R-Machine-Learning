@@ -44,6 +44,8 @@ library(tidyverse)
 tidymodels::tidymodels_prefer() 
 ```
 
+*Note*: You may receive the message "Error: package or namespace load failed for ‘tidymodels’ ... there is no package called ..." when installing `tidymodels`. If you receive this message, install the packages that are giving you the errors with `install.packages()`. 
+
 # What is Machine Learning?
 
 Machine learning refers to the automated detection of meaningful patterns in data (Shalev-Schwartz and Ben-David, 2014). For this reason, some authors often use the term "statistical learning" to reference the same concept (James et al., 2021). The overall goal of machine learning is to develop models that are both dynamic and data-dependent.
@@ -68,7 +70,7 @@ Which of these research applications are well suited for machine learning method
 
 5.  Predicting an individual's hourly wage based on demographic, economic, and geographic information.
 
-**Solutions**: 
+**Solutions**:
 
 # Example of a Machine Learning Problem
 
@@ -86,7 +88,7 @@ where $f$ is a fixed but unknown function of our feature vector $\textbf{X} = (X
 
 **Example 1: Employment Survey Data**
 
-To ground symbols in code, let's explore our primary data set for Part 1 of the workshop: the Current Population Survey (CPS) from 2022. You can find more information about the data set and methodology [here](https://www.census.gov/programs-surveys/cps.html). 
+To ground symbols in code, let's explore our primary data set for Part 1 of the workshop: the Current Population Survey (CPS) from 2022. You can find more information about the data set and methodology [here](https://www.census.gov/programs-surveys/cps.html).
 
 First, we'll load the data:
 
@@ -124,19 +126,19 @@ $\texttt{hourly_wage} = f(\texttt{age}) + \epsilon$
 
 Notice that we have called *y* the "outcome" or "target" variable, and the set of $\mathbf{X}$ variables "features" or "inputs." How does this language reflect a conceptual shift from traditional statistics and causal inference, where we typically use language like "independent" and "dependent" variables?
 
-**Solution**: 
+**Solution**:
 
 # Refining Our Research Question
 
 Now, let's start building a more complex model that utilizes the other features we have available that are likely related to one's wage, including education level, race, sex, and occupation.
 
-Importantly, we rarely predict with only a single feature! In the multivariate case, we have many "independent variable" axes, but still one dependent variable axis. The "line" in this case turns into a hyperplane which tries to capture as much of the information about the multi-dimensional data points as possible:
+Importantly, we rarely predict with only a single feature! In the multivariate case, we have many axes corresponding to X variables, but still one Y variable axis. The "line" in this case turns into a hyperplane which tries to capture as much of the information about the multi-dimensional data points as possible:
 
 ![Multivariate Linear Regression](../images/linear_regression_hyperplane.jpeg)
 
 ## 🥊 Challenge 2: Exploratory Analyses
 
-In Challenge 1, we looked at the relationship between a continuous x feature, `age`, and our target, `hourly_wage`. Perform your own exploratory analyses, but this time examine at least one categorical feature (or features) that you think might be useful in predicting `hourly_wage`. Which features seem most interesting to you? *Hint:* one way to explore continuous variables is by looking at overlapping histograms. Check out the documentation [here](https://ggplot2.tidyverse.org/reference/geom_histogram.html). 
+In Challenge 1, we looked at the relationship between a continuous x feature, `age`, and our target, `hourly_wage`. Perform your own exploratory analyses, but this time examine at least one categorical feature (or features) that you think might be useful in predicting `hourly_wage`. Which features seem most interesting to you? *Hint:* one way to explore continuous variables is by looking at overlapping histograms. Check out the documentation [here](https://ggplot2.tidyverse.org/reference/geom_histogram.html).
 
 ```{r}
 # Histogram of Wage by and some categorical variable of your choice 
@@ -176,7 +178,7 @@ We will follow these steps:
 
 # Step 1: Pre-Processing
 
-Sometimes, our features are not in the best format for our model to use effectively. Data are messy, and often need to be transformed for machine learning model to be able to be fit.
+Sometimes, our features are not in the best format for our model to use effectively. Data are messy, and often need to be transformed to be able to fit a machine learning model
 
 ## Data Types
 
@@ -194,7 +196,7 @@ jobs %>%
 
 What are the data types for these three variables? If you are familiar with linear regression, can you think of issues that might arise if we were to plug these variables into a regression model?
 
-**Solution:** 
+**Solution:**
 
 #### Missing Values
 
@@ -262,7 +264,7 @@ Performing a train-test split is an approach to managing the bias-variance trade
 
 🔔 **Question 2**: How does splitting our data into the training and test sets address the bias-variance trade-off described above?
 
-**Answer**: 
+**Answer**:
 
 ## Performing the split
 
@@ -302,7 +304,7 @@ jobs_wflow <- workflow() %>%
   add_recipe(jobs_recipe) %>%
   add_model(model)
 
-# obtain predictions 
+# fit model and obtain predictions  
 jobs_fit <- fit(jobs_wflow, jobs_train)
 jobs_fit %>% tidy()
 ```
@@ -332,7 +334,7 @@ rsq_trad(results, truth = hourly_wage, estimate = .pred)
 
 💡 **Tip**: In this example, we have used ordinary least squares for our regression model. Ridge and lasso regression are two other techniques that can be useful to reduce or remove the coefficients on variables that do not add much to our example.
 
-```{r plot_predictions}
+```{r}
 # We can plot the data prior to computing metrics for a visual inspection of fit
 results %>%
   ggplot(aes(x = hourly_wage, y = .pred)) +
@@ -343,7 +345,8 @@ results %>%
        y = "Predicted Values") +
   coord_obs_pred()
 ```
-Inspecting this plot by eye, it looks like the model is struggling to predict wages for higher earners. 
+
+Inspecting this plot by eye, it looks like the model is struggling to predict wages for higher earners.
 
 We can do multiple metrics at once, though. Let's pick three common metrics for linear regression models - $R^2$, Root Mean Square Error (RMSE), and Mean Absolute Error (MAE) - and evaluate them at the same time using the `yardstick` package.
 
@@ -355,7 +358,7 @@ jobs_metrics(results, truth = hourly_wage, estimate = .pred)
 
 ## 🥊 Challenge 4: Predicting Income
 
-Train a model to predict an individual's income `total_indiv_income` on `jobs_train` and evaluate the model on `jobs_train`. Note that this is related to, but not a direct function of, one's wage because income can come from multiple sources (e.g., retirement savings, investment income).
+Train a model to predict an individual's income `total_indiv_income` on `jobs_train` and evaluate the model on `jobs_test`. Note that this is related to, but not a direct function of, one's wage because income can come from multiple sources (e.g., retirement savings, investment income).
 
 First, create a recipe that gives a set of instructions for pre-processing.
 
