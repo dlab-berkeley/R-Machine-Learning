@@ -39,11 +39,15 @@ Before we dive into today's material, let's load our libraries
 `tidymodels` and `tidyverse` libraries.
 
 ```{r install, include=FALSE}
+# load packages 
 library(tidymodels)
 library(tidyverse)
 
 # Prefer tidymodels functions in any case of name conflict
 tidymodels::tidymodels_prefer() 
+
+# set seed for reproducible results
+set.seed(1) 
 ```
 
 # Other Tasks in Supervised Machine Learning: Classification
@@ -80,8 +84,6 @@ learning.
 5.  A political scientist wants to classify Twitter posts as positive or
     negative.
 
-
-
 # Today's Data: Voting Patterns in the 2020 Election
 
 Now, let's load our primary data set for today's workshop: `vote2020`.
@@ -97,6 +99,13 @@ vote2020 <- read.csv("../data/vote2020.csv",row.names = NULL)
 # visually inspect the data frame 
 view(vote2020)
 ```
+
+# The Machine Learning Pipeline
+
+Today, we will continue to build out the steps in the machine learning
+pipeline.
+
+![ML Pipeline](../images/ML_Pipeline.jpeg)
 
 # Exploratory Analysis
 
@@ -133,7 +142,7 @@ its poor real-world prediction outcomes, indicating a potential
 oversight in the model training and evaluation process. Why might that
 be?
 
-**Answer 1**: 
+**Answer 1**:
 
 Now that we have a better sense of the data, let's go ahead and split
 `vote2020` into training and test sets:
@@ -201,7 +210,7 @@ training and test sets rather than imputing missing values before
 splitting the data set. Consider why we don't want the data we train our
 model on to be exposed to our test data set in the first place.
 
-**Answer 2**: 
+**Answer 2**:
 
 # Developing and Evaluating Models
 
@@ -270,7 +279,7 @@ logistic_predictions[,14:17] # look at last 4 columns
 Notice that four new columns have appeared in our data set. What do
 these values mean? What are they telling us?
 
-**Answer 3**: 
+**Answer 3**:
 
 To evaluate the model, we'll use the `accuracy` function:
 
@@ -348,14 +357,14 @@ chal3_model <- logistic_reg(mode = "classification",
                                penalty=____)
 
 chal3_wflow <- workflow() %>%
-  add_recipe(____) %>%
-  add_model(____)
+  add_recipe(voterecipe) %>%
+  add_model(chal3_model)
 
-chal3_fit <- fit(chal3_wflow, ____)
+chal3_fit <- fit(chal3_wflow, vote_train)
 
-chal3_predictions <- augment(____, new_data = ____)
+chal3_predictions <- augment(chal3_fit, new_data = vote_test)
 
-accuracy(chal3_predictions, truth = ____, estimate = .pred_class, type="class")
+accuracy(chal3_predictions, truth = voted, estimate = .pred_class, type="class")
 ```
 
 It's nice that we can do different types of regularization, but how do
@@ -409,7 +418,8 @@ use a process called cross-validation to do select the best
 
 1.  Perform a train-test split, as you normally would.
 2.  Choose a number of folds - the most common is $K=5$ - and split up
-    your training data into those equally sized "folds".
+    your training data into those equally sized "folds". $V$ is
+    sometimes used to refer to the number of folds.
 3.  For each hyperparameter you want to tune, specify the possible
     values it could take. Then, for each hyperparameter:
     1.  For *each* *value* of that hyperparameter, we're going to fit
@@ -457,15 +467,16 @@ We passed in a function called `tune()`. This signals to `tidymodels`
 that we'd like to tune this hyperparameter. How do we indicate what
 values we should test during tuning? We're going to keep things simple
 and focus on the most basic choice of tuning: a grid search. In this
-case, we specify a range of values, and then test every single one for
-the hyperparameter. We use the `grid_regular` function for this
-procedure:
+case, we specify a range of
+[penalty](https://dials.tidymodels.org/reference/penalty.html) values,
+and then test every single one for the best hyperparameter. We use the
+`grid_regular` function for this procedure:
 
 ```{r}
 # Create grid of parameters
 cv_grid <- grid_regular(
-  penalty(range = c(-5, 5)), # select penalty values with -5 and 5 
-  levels=10) # pick 10 values between -5 and 5 
+  penalty(range = c(-5,5)), # specify penalty range 
+  levels=10) # pick 10 values within penalty range  
 
 print(cv_grid)
 ```
@@ -475,7 +486,7 @@ print(cv_grid)
 We have a hyperparameter grid with 10 rows. What does each of these
 signify?
 
-**Solution 4**: 
+**Solution 4**:
 
 ## 🎬 **Demo**: Performing Hyperparameter Tuning with Cross Validation
 
@@ -562,9 +573,10 @@ accuracy(cv_predictions, truth = voted, estimate = .pred_class, type="class")
 
 ## 🔔 Question 5: Accuracy on the Test Set
 
-Notice our final accuracy on the test set is lower than our accuracy on the training set. Why might that be? 
+Notice our final accuracy on the test set is lower than our accuracy on
+the training set. Why might that be?
 
-**Solution 5**: 
+**Solution 5**:
 
 ## Hyperparameter Tuning vs. Default Arguments
 
