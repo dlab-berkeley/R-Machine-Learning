@@ -28,7 +28,6 @@ learning.
 
 **Solution 1: (2), (4), and (5).**
 
-
 ## 🥊 Challenge 1: Exploratory Data Analysis
 
 Perform exploratory analyses on the `vote2020` data set, keeping in mind
@@ -52,7 +51,6 @@ vote2020 %>%
     theme_minimal()
 ```
 
-
 ## 🔔 Question 1: Train-Test Split
 
 A researcher used the entire `vote2020` data set to train a model that
@@ -74,7 +72,6 @@ data. Since the model's performance was only evaluated on data it had
 already seen, its apparent accuracy was misleading, giving a false sense
 of confidence in its predictive capabilities.
 
-
 ## 🥊 Challenge 2: Creating a Recipe
 
 Using the same logic from Part 1, create your own recipe called
@@ -83,7 +80,8 @@ Instead of dropping rows with missing values, use
 [step_impute_median](https://recipes.tidymodels.org/reference/step_impute_median.html)
 to impute numeric variables and
 [step_impute_mode](https://recipes.tidymodels.org/reference/step_impute_mode.html)
-to impute categorical variables.
+to impute categorical variables. *Hint:* you can select all numeric
+variables with `all_numeric_predictors()`.
 
 ```{r}
 voterecipe <- 
@@ -92,7 +90,6 @@ voterecipe <-
   step_impute_mode(all_nominal_predictors()) %>%
   step_dummy(all_nominal_predictors()) 
 ```
-
 
 ## 🔔 Question 2: Imputation
 
@@ -110,7 +107,6 @@ the test set during training, which can lead to overly optimistic
 performance estimates and a model that may not perform as well on truly
 unseen data. This concept is referred to as 'data leakage.'
 
-
 ## 🔔 Question 3: Analyzing Output
 
 Notice that four new columns have appeared in our data set. What do
@@ -122,7 +118,6 @@ was determined using the two variables `.pred_0` and `.pred_1`, which
 represent the predictions from the logistic regression. If membership in
 group 1 (i.e., voted = 1) is greater than .5, then `.pred_class` will
 take a value of 1.
-
 
 ## 🥊 Challenge 3: Changing Hyperparameters
 
@@ -149,7 +144,6 @@ chal3_predictions <- augment(chal3_fit, new_data = vote_test)
 accuracy(chal3_predictions, truth = voted, estimate = .pred_class, type="class")
 ```
 
-
 ## 🔔 Question 4: Analyzing a Grid
 
 We have a hyperparameter grid with 10 rows. What does each of these
@@ -160,10 +154,10 @@ arguments, for our logistic regression. R will try each combination to
 find the one that generates the most accurate prediction. As we add more
 hyperparameters, the combinations will increase exponentially.
 
-
 ## 🔔 Question 5: Accuracy on the Test Set
 
-Notice our final accuracy on the test set is lower than our accuracy on the training set. Why might that be? 
+Notice our final accuracy on the test set is lower than our accuracy on
+the training set. Why might that be?
 
 **Solution 5**: We selected our hyperparameters (i.e., the penalty
 function) to yield the highest output *specifically* on our training

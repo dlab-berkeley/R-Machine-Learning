@@ -81,7 +81,7 @@ colSums((is.na(jobs)))
 
 ## 🥊 Challenge 4: Predicting Income
 
-Train a model to predict an individual's income `total_indiv_income` on `jobs_train` and evaluate the model on `jobs_train`. Note that this is related to, but not a direct function of, one's wage because income can come from multiple sources (e.g., retirement savings, investment income).
+Train a model to predict an individual's income `total_income` on `jobs_train` and evaluate the model on `jobs_train`. Note that this is related to, but not a direct function of, one's wage because income can come from multiple sources (e.g., retirement savings, investment income).
 
 First, create a recipe that gives a set of instructions for pre-processing.
 
