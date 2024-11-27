@@ -188,11 +188,12 @@ Instead of dropping rows with missing values, use
 [step_impute_median](https://recipes.tidymodels.org/reference/step_impute_median.html)
 to impute numeric variables and
 [step_impute_mode](https://recipes.tidymodels.org/reference/step_impute_mode.html)
-to impute categorical variables.
+to impute categorical variables. *Hint:* you can select all numeric
+variables with `all_numeric_predictors()`.
 
 ```{r}
 voterecipe <- 
-  recipe(_____ ~ ., data = _____) %>%
+  recipe(_____ ~ ., data = vote_train) %>%
   step_impute_median(_____) %>%
   step_impute_mode(_____) %>%
   step_dummy(_____) 
@@ -271,7 +272,7 @@ predictions, and take a look at them:
 
 ```{r}
 logistic_predictions <- augment(vote_fit, new_data = vote_test)
-logistic_predictions[,14:17] # look at last 4 columns 
+logistic_predictions # look at predictions
 ```
 
 ## 🔔 Question 3: Analyzing Output
@@ -311,7 +312,7 @@ prediction.
 
 Notice that until now, we have used the default settings for the linear
 and logistic regressions we have run. Looking at the
-(documentation)[<https://www.rdocumentation.org/packages/parsnip/versions/0.0.0.9001/topics/logistic_reg>]
+[documentation](https://www.rdocumentation.org/packages/parsnip/versions/0.0.0.9001/topics/logistic_reg)
 for logistic regression, we see that there are many arguments that we
 left blank when we initialized our model above. These arguments, also
 known as 'parameters', correspond to statistical choices about how the
