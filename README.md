@@ -6,12 +6,19 @@
 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
 This repository contains the materials for D-Lab's R Machine Learning
-with `tidymodels`. Familiarity with R programming and data wrangling is
+with `tidymodels`. 
+
+## Prerequisites
+
+Familiarity with R programming and data wrangling is
 assumed. If you are not familiar with the materials in [Data Wrangling
 and Manipulation in
 R](https://github.com/dlab-berkeley/R-Data-Wrangling), we recommend
 attending that workshop first. Learners will likely benefit from prior
 exposure to basic statistics.
+
+Check out D-Lab’s [Workshop Catalog](https://dlab-berkeley.github.io/dlab-workshops/) to browse all workshops, see what’s running now, and review prerequisites.
+
 
 ## Workshop Goals
 
